@@ -3,9 +3,7 @@
 #include "../inc/SymbolTable.hpp"
 #include "../inc/defs.h"
 
-SectionTable::SectionTable() {
-  addSection("UNDEFINED");
-}
+SectionTable::SectionTable() { }
 
 SectionTable& SectionTable::getInstance() {
   static SectionTable instance;

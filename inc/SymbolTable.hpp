@@ -16,7 +16,7 @@ private:
 public:
   static SymbolTable& getInstance();
   
-  int getSymbolID() { return symbolID++; }
+  int getSymbolID() { return ++symbolID; }
 
   int size() const { return symtab.size(); }
   bool foundEntryByName(string name) const { return entryIndexMap.find(name) != entryIndexMap.end(); } 
