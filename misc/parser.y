@@ -56,7 +56,7 @@ line:
       if (_asm_label($1) < 0) { delete $1; delete $4; return -1; } _asm_dir_section($4); delete $1; delete $4;
     }
   | TOKEN_SECTION TOKEN_SYM endls { _asm_dir_section($2); delete $2; }
-  | TOKEN_SYM TOKEN_COLON endls { if (_asm_label($1)) { delete $1; return -1; } delete $1; }
+  | TOKEN_SYM TOKEN_COLON endls { if (_asm_label($1) < 0) { delete $1; return -1; } delete $1; }
   | TOKEN_SYM TOKEN_COLON TOKEN_END { 
       if (_asm_label($1) < 0) { delete $1; return -1; } _asm_dir_end(); return 15;
     }

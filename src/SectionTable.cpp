@@ -4,7 +4,7 @@
 #include "../inc/defs.h"
 
 SectionTable::SectionTable() {
-  //addSection("UNDEFINED");
+  addSection("UNDEFINED");
 }
 
 SectionTable& SectionTable::getInstance() {
