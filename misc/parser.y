@@ -26,8 +26,8 @@ void yyerror(const char* s);
   AssemblyLineArguments* args;
 }
 
-%token TOKEN_ENDL TOKEN_COMMA
-%token TOKEN_GLOBAL TOKEN_END
+%token TOKEN_ENDL TOKEN_COMMA TOKEN_COLON
+%token TOKEN_GLOBAL TOKEN_EXTERN TOKEN_SECTION TOKEN_END 
 
 %token <sval> TOKEN_SYM
 
@@ -41,7 +41,25 @@ input:
 
 line:
   endls
+  | TOKEN_SYM TOKEN_COLON TOKEN_GLOBAL symlist endls { 
+      if (_asm_label($1) < 0) { delete $4; delete $1; return -1; } _asm_dir_global($4); delete $1; delete $4; 
+    }
   | TOKEN_GLOBAL symlist endls { _asm_dir_global($2); delete $2; }
+  | TOKEN_EXTERN symlist endls { 
+      if (_asm_dir_extern($2) < 0) { delete $2; return -1; } delete $2;
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_EXTERN symlist endls { 
+      if (_asm_label($1) < 0) { delete $4; delete $1; return -1; } 
+      if (_asm_dir_extern($4) < 0) { delete $1; delete $4; return -1; } delete $1; delete $4; 
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_SECTION TOKEN_SYM endls {
+      if (_asm_label($1) < 0) { delete $1; delete $4; return -1; } _asm_dir_section($4); delete $1; delete $4;
+    }
+  | TOKEN_SECTION TOKEN_SYM endls { _asm_dir_section($2); delete $2; }
+  | TOKEN_SYM TOKEN_COLON endls { if (_asm_label($1)) { delete $1; return -1; } delete $1; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_END { 
+      if (_asm_label($1) < 0) { delete $1; return -1; } _asm_dir_end(); return 15;
+    }
   | TOKEN_END { _asm_dir_end(); return 15; }
   ;
 
@@ -66,7 +84,12 @@ int main(int argc, char** argv) {
 
   yyin = fp;
 
-  while (yyparse() != 15) { }
+  while (1) {
+    int ret = yyparse();
+    if (ret == -1 || ret == 15) {
+      break;
+    }
+  }
 
   return 0;
 }

@@ -1,6 +1,8 @@
 #include "../inc/Assembler.hpp"
 #include "../inc/AssemblyDirectives.hpp"
 #include "../inc/SymbolTable.hpp"
+#include "../inc/SectionTable.hpp"
+#include "../inc/Section.hpp"
 #include "../inc/defs.h"
 
 Assembler& Assembler::getInstance() {
@@ -12,9 +14,44 @@ AssemblyDirectives& Assembler::directives() {
   return AssemblyDirectives::getInstance();
 }
 
+int Assembler::label(string* labelPtr) {
+  SectionTable& sectiontab = SectionTable::getInstance();
+  if (sectiontab.getCurrentSection() == nullptr) {
+    cout << "Symbol has to be defined inside an existing section!" << endl;
+    return -1;
+  }
+
+  ulong locationCounter = sectiontab.getCurrentSection()->getLocationCounter();
+  int sectionIndex = sectiontab.getCurrentSection()->getId();
+
+  SymbolTable& symtab = SymbolTable::getInstance();
+
+  if (symtab.foundEntryByName(*labelPtr)) {
+    SymbolTableEntry*& stEntry = symtab[symtab.getIndexOfEntry(*labelPtr)];
+
+    if (stEntry->isDefined() || stEntry->isExtern()) {
+      cout << "Symbol " << stEntry->getName() << " is already defined!" << endl;
+      return -2;
+    }
+
+    // otherwise, symbol was mentioned before definition, so we define it now
+
+    stEntry->setIndex(sectionIndex);
+    stEntry->setDefined(true);
+    stEntry->setValue(locationCounter);
+  }
+  else {
+    symtab.addSymbol(*labelPtr, locationCounter, ST_INFO(STBIND_LOCAL, STTYPE_NOTYPE), sectionIndex, 0);
+    symtab[symtab.getIndexOfEntry(*labelPtr)]->setDefined(true);
+  }
+
+  return 0;
+}
+
 void Assembler::printSymbolTable() {
   SymbolTable& symtab = SymbolTable::getInstance();
 
+  cout << "------------------------------------" << endl;
   cout << endl << "#.symtab" << endl;
 
   cout << "Num" << "\t" << "Value" << "\t" << "Size" << "\t" << "Type" << "\t" 
@@ -41,5 +78,5 @@ void Assembler::printSymbolTable() {
     }
     cout << "\t" << stEntry->name << endl;
   }
-  
+  cout << "------------------------------------" << endl;
 }

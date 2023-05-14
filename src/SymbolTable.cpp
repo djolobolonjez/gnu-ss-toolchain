@@ -6,6 +6,7 @@ SymbolTable::SymbolTable() {
 }
 
 void SymbolTable::addSymbol(string name, ulong value, byte info, int index, ulong size) {
+  entryIndexMap[name] = symtab.size();
   symtab.push_back(new SymbolTableEntry(value, name, info, index, size));
 }
 
