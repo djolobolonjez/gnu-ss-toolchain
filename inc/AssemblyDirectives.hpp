@@ -9,12 +9,17 @@ struct AssemblyLineArguments;
 class AssemblyDirectives {
 private:
   AssemblyDirectives() = default;
+
+  void checkNoSection();
 public:
   static AssemblyDirectives& getInstance();
 
   void global(AssemblyLineArguments*);
-  int ext(AssemblyLineArguments*);
+  void ext(AssemblyLineArguments*);
   void section(string*);
+  void ascii(string);
+  void word(AssemblyLineArguments*);
+  void skip(string, int);
   void end();
 };
 

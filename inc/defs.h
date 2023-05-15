@@ -7,6 +7,7 @@
 
 #define STBIND_LOCAL 0
 #define STBIND_GLOBAL 1
+#define STBIND_EXTERN 2
 
 #define STTYPE_NOTYPE 0
 #define STTYPE_SECTION 1 

@@ -3,63 +3,107 @@
 #include "../inc/defs.h"
 #include "../inc/SectionTable.hpp"
 #include "../inc/Section.hpp"
+#include "../inc/AssemblyException.hpp"
 
 AssemblyDirectives& AssemblyDirectives::getInstance() {
   static AssemblyDirectives instance;
   return instance;
 }
 
+void AssemblyDirectives::checkNoSection() {
+  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+  if (currentSection == nullptr) {
+    throw AssemblyException("Error: No active section!");
+  }
+}
+
 void AssemblyDirectives::global(AssemblyLineArguments* args) {
   ArgVector arguments = *(args->args);
   
   SymbolTable& symtab = SymbolTable::getInstance();
-  for (auto sptr : arguments) {
-    if (symtab.foundEntryByName(*sptr)) {
-      int symbolIndex = symtab.getIndexOfEntry(*sptr);
+  for (auto arg : arguments) {
+    string value = *(arg.value);
+
+    if (symtab.foundEntryByName(value)) {
+      int symbolIndex = symtab.getIndexOfEntry(value);
+
+      if (ST_BIND(symtab[symbolIndex]->getInfo()) == STBIND_GLOBAL) {
+        throw AssemblyException("Multiple definition of symbol " + symtab[symbolIndex]->getName());
+      }
+      if (symtab[symbolIndex]->isExtern()) {
+        throw AssemblyException("Error: Symbol cannot have extern and global binding at the same time!");
+      }
+
       symtab[symbolIndex]->setInfo(ST_INFO(STBIND_GLOBAL, STTYPE_NOTYPE));
     }
     else {
-      symtab.addSymbol(*sptr, 0, ST_INFO(STBIND_GLOBAL, STTYPE_NOTYPE), UND, 0);
+      symtab.addSymbol(value, 0, ST_INFO(STBIND_GLOBAL, STTYPE_NOTYPE), UND, 0);
     }
   }
 }
 
-int AssemblyDirectives::ext(AssemblyLineArguments* args) {
+void AssemblyDirectives::ext(AssemblyLineArguments* args) {
   ArgVector arguments = *(args->args);
 
   SymbolTable& symtab = SymbolTable::getInstance();
-  for (auto sptr : arguments) {
-    if (symtab.foundEntryByName(*sptr) == false) {
-      symtab.addSymbol(*sptr, 0, ST_INFO(STBIND_GLOBAL, STTYPE_NOTYPE), UND, 0);
+  for (auto arg : arguments) {
+    string value = *(arg.value);
+    if (symtab.foundEntryByName(value) == false) {
+      symtab.addSymbol(value, 0, ST_INFO(STBIND_EXTERN, STTYPE_NOTYPE), UND, 0);
     }
 
-    SymbolTableEntry*& stEntry = symtab[symtab.getIndexOfEntry(*sptr)];  
+    SymbolTableEntry*& stEntry = symtab[symtab.getIndexOfEntry(value)];  
     if (stEntry->isDefined()) {
-      cout << "Symbol defined inside this unit cannot be marked as extern!" << endl;
-      return -1;
+      throw AssemblyException("Symbol defined inside this unit cannot be marked as extern!");
+    } 
+    if (ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) {
+      throw AssemblyException("Symbol exported as global cannot have external binding!");
     }
+    if (stEntry->isExtern()) {
+      throw AssemblyException("Mutliple definition of symbol " + stEntry->getName());
+    }
+
     stEntry->setExtern(true);
   }
-
-  return 0;
 }
 
 void AssemblyDirectives::section(string* sptr) {
   SectionTable& sectiontab = SectionTable::getInstance();
   
-  Section*& currentSection = sectiontab.getCurrentSection();
-  if (currentSection == nullptr) {
-    sectiontab.addSection(*sptr);
-    currentSection = sectiontab[sectiontab.getSectionIndexByName(*sptr)];
+  if (sectiontab.foundSectionByName(*sptr)) {
+    throw AssemblyException("Error: Multiple definition of section " + *sptr);
   }
-  else {
-    if (currentSection->getName() != *sptr) {
-      if (sectiontab.foundSectionByName(*sptr) == false) {
-        sectiontab.addSection(*sptr);
-      }
-      currentSection = sectiontab[sectiontab.getSectionIndexByName(*sptr)];
-    }
-  }
+
+  sectiontab.addSection(*sptr);
+  sectiontab.setSection(sectiontab[sectiontab.getSectionIndexByName(*sptr)]);
+}
+
+void AssemblyDirectives::word(AssemblyLineArguments* args) {
+  checkNoSection();
+
+  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+  // Treba sacuvati simbole i literale za koje se poziva ova direktiva, zbog drugog prolaza asembler
+  int count = args->args->size();
+  currentSection->incrementLocationCounter(count * 4);
+  currentSection->incrementSize(count * 4);
+}
+
+void AssemblyDirectives::skip(string literal, int base) {
+  checkNoSection();
+
+  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+
+  int value = stoi(literal, nullptr, base);
+  currentSection->incrementLocationCounter(value);
+  currentSection->incrementSize(value);
+}
+
+void AssemblyDirectives::ascii(string str) {
+  checkNoSection();
+
+  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+  currentSection->incrementLocationCounter(str.length() - 2);
+  currentSection->incrementSize(str.length() - 2);
 }
 
 void AssemblyDirectives::end() {

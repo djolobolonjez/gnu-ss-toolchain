@@ -26,6 +26,10 @@ public:
   int getId() const { return id; }
   int getLocationCounter() const { return locationCounter; }
   int getSize() const { return size; }
+
+  void incrementLocationCounter(int value) { locationCounter += value; }
+  void incrementSize(int value) { size += value; }
+
   RelocationTable* getRelaLink() const { return relaLink; }
 };
 

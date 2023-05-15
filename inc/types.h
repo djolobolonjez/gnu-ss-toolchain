@@ -6,10 +6,15 @@
 #include <string>
 using namespace std;
 
-typedef vector<string*> ArgVector;
-
 typedef unsigned long ulong;
 typedef unsigned char byte;
+
+struct arg {
+  string* value;
+  int type; // 0 - symbol, 1 - literal
+};
+
+typedef vector<arg> ArgVector;
 
 struct AssemblyLineArguments {
   ArgVector* args;
@@ -42,7 +47,9 @@ struct SymbolTableEntry {
 
     bool isDefined() const { return defined; }
     bool isExtern() const { return ext; }
+
     string getName() const { return name; }
+    byte getInfo() const { return info; }
 
     void setDefined(bool _defined) { defined = _defined; }
     void setExtern(bool _ext) { ext = _ext; }

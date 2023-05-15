@@ -4,6 +4,8 @@
 #include "../inc/SectionTable.hpp"
 #include "../inc/Section.hpp"
 #include "../inc/defs.h"
+#include "../inc/AssemblyException.hpp"
+#include <iomanip>
 
 Assembler& Assembler::getInstance() {
   static Assembler instance;
@@ -17,8 +19,7 @@ AssemblyDirectives& Assembler::directives() {
 int Assembler::label(string* labelPtr) {
   SectionTable& sectiontab = SectionTable::getInstance();
   if (sectiontab.getCurrentSection() == nullptr) {
-    cout << "Symbol has to be defined inside an existing section!" << endl;
-    return -1;
+    throw AssemblyException("Symbol has to be defined inside an existing section!");
   }
 
   ulong locationCounter = sectiontab.getCurrentSection()->getLocationCounter();
@@ -30,8 +31,7 @@ int Assembler::label(string* labelPtr) {
     SymbolTableEntry*& stEntry = symtab[symtab.getIndexOfEntry(*labelPtr)];
 
     if (stEntry->isDefined() || stEntry->isExtern()) {
-      cout << "Symbol " << stEntry->getName() << " is already defined!" << endl;
-      return -2;
+      throw AssemblyException("Symbol " + stEntry->getName() + " is already defined!" );
     }
 
     // otherwise, symbol was mentioned before definition, so we define it now
@@ -61,13 +61,21 @@ void Assembler::printSymbolTable() {
   for (int i = 0; i < symtab.size(); i++) {
     SymbolTableEntry*& stEntry = symtab[i];
     cout << i << "\t";
-    cout << stEntry->value << "\t";
+    cout << hex << stEntry->value << "\t";
     cout << stEntry->size << "\t";
 
     cout << (ST_TYPE(stEntry->info) == STTYPE_NOTYPE ? "NOTYPE" : "SECTION");
     cout << "\t";
 
-    cout << (ST_BIND(stEntry->info) == STBIND_GLOBAL ? "GLOB" : "LOC");
+    if (ST_BIND(stEntry->info) == STBIND_GLOBAL) {
+      cout << "GLOB";
+    }
+    else if (ST_BIND(stEntry->info) == STBIND_EXTERN) {
+      cout << "EXT";
+    }
+    else { 
+      cout << "LOC";
+    }
     cout << "\t";
 
     if (stEntry->index == UND) {
