@@ -5,21 +5,30 @@
 using namespace std;
 
 struct AssemblyLineArguments;
+class Section;
 
 class AssemblyDirectives {
 private:
   AssemblyDirectives() = default;
 
   void checkNoSection();
+  
+  void addWord(Section*&, int);
+  void wordLiteral(string value);
+  void wordSymbol(string symbol); 
 public:
   static AssemblyDirectives& getInstance();
 
   void global(AssemblyLineArguments*);
   void ext(AssemblyLineArguments*);
-  void section(string*);
-  void ascii(string);
-  void word(AssemblyLineArguments*);
-  void skip(string, int);
+  void sectionPassOne(string*);
+  void sectionPassTwo(string*);
+  void asciiPassOne(string);
+  void asciiPassTwo(string);
+  void wordPassOne(AssemblyLineArguments*);
+  void wordPassTwo(AssemblyLineArguments*);
+  void skipPassOne(string, int);
+  void skipPassTwo(string, int);
   void end();
 };
 

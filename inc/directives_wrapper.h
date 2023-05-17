@@ -5,13 +5,13 @@
 using namespace std;
 struct AssemblyLineArguments;
 
-void _asm_dir_global(AssemblyLineArguments*);
-void _asm_dir_extern(AssemblyLineArguments*);
-void _asm_dir_section(string*);
-void _asm_dir_word(AssemblyLineArguments*);
-void _asm_dir_skip(string*);
-void _asm_dir_ascii(string*);
-void _asm_label(string*);
-void _asm_dir_end();
+void _asm_dir_global(AssemblyLineArguments*, bool);
+void _asm_dir_extern(AssemblyLineArguments*, bool);
+void _asm_dir_section(string*, bool);
+void _asm_dir_word(AssemblyLineArguments*, bool);
+void _asm_dir_skip(string*, bool);
+void _asm_dir_ascii(string*, bool);
+void _asm_label(string*, bool);
+void _asm_dir_end(bool);
 
 #endif // DIRECTIVES_WRAPPER_H

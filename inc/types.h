@@ -11,7 +11,7 @@ typedef unsigned char byte;
 
 struct arg {
   string* value;
-  int type; // 0 - symbol, 1 - literal
+  int type; // 0 - symbol, 1 - literal, 2 - other
 };
 
 typedef vector<arg> ArgVector;
@@ -50,6 +50,7 @@ struct SymbolTableEntry {
 
     string getName() const { return name; }
     byte getInfo() const { return info; }
+    ulong getValue() const { return value; }
 
     void setDefined(bool _defined) { defined = _defined; }
     void setExtern(bool _ext) { ext = _ext; }

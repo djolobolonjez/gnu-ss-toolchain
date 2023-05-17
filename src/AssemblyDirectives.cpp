@@ -4,6 +4,8 @@
 #include "../inc/SectionTable.hpp"
 #include "../inc/Section.hpp"
 #include "../inc/AssemblyException.hpp"
+#include "../inc/utils.hpp"
+#include <iomanip>
 
 AssemblyDirectives& AssemblyDirectives::getInstance() {
   static AssemblyDirectives instance;
@@ -11,10 +13,42 @@ AssemblyDirectives& AssemblyDirectives::getInstance() {
 }
 
 void AssemblyDirectives::checkNoSection() {
-  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
   if (currentSection == nullptr) {
     throw AssemblyException("Error: No active section!");
   }
+}
+
+void AssemblyDirectives::addWord(Section*& section, int data) {
+  for (int i = 0; i < WORD_SIZE; i++) {
+    section->addByteContent(BYTEMASK(data));
+    data >>= 8;
+  }
+}
+
+void AssemblyDirectives::wordSymbol(string symbol) {
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+  SymbolTable& symtab = SymbolTable::getInstance();
+
+  if (symtab.foundEntryByName(symbol) == false) {
+    throw AssemblyException("Error: Cannot use .word directive with symbol that is not defined!");
+  }
+
+  int symbolIndex = symtab.getIndexOfEntry(symbol);
+  SymbolTableEntry*& stEntry = symtab[symbolIndex];
+
+  if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
+    addWord(currentSection, stEntry->getValue());
+  }
+  else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
+    addWord(currentSection, 0);
+    // dodati relokaciju
+  }
+}
+
+void AssemblyDirectives::wordLiteral(string value) {
+  int data = stoi(value, nullptr, Utils::findBase(value));
+  addWord(SectionTable::getInstance().getCurrentSection(), data);
 }
 
 void AssemblyDirectives::global(AssemblyLineArguments* args) {
@@ -67,7 +101,7 @@ void AssemblyDirectives::ext(AssemblyLineArguments* args) {
   }
 }
 
-void AssemblyDirectives::section(string* sptr) {
+void AssemblyDirectives::sectionPassOne(string* sptr) {
   SectionTable& sectiontab = SectionTable::getInstance();
   
   if (sectiontab.foundSectionByName(*sptr)) {
@@ -78,27 +112,59 @@ void AssemblyDirectives::section(string* sptr) {
   sectiontab.setSection(sectiontab[sectiontab.getSectionIndexByName(*sptr)]);
 }
 
-void AssemblyDirectives::word(AssemblyLineArguments* args) {
-  checkNoSection();
-
-  Section* currentSection = SectionTable::getInstance().getCurrentSection();
-  // Treba sacuvati simbole i literale za koje se poziva ova direktiva, zbog drugog prolaza asembler
-  int count = args->args->size();
-  currentSection->incrementLocationCounter(count * 4);
-  currentSection->incrementSize(count * 4);
+void AssemblyDirectives::sectionPassTwo(string* sptr) {
+  SectionTable& sectiontab = SectionTable::getInstance();
+  int sectionIndex = sectiontab.getSectionIndexByName(*sptr);
+  sectiontab.setSection(sectiontab[sectionIndex]);
 }
 
-void AssemblyDirectives::skip(string literal, int base) {
+void AssemblyDirectives::wordPassOne(AssemblyLineArguments* args) {
   checkNoSection();
 
-  Section* currentSection = SectionTable::getInstance().getCurrentSection();
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+
+  int count = args->args->size();
+  currentSection->incrementLocationCounter(count * WORD_SIZE);
+  currentSection->incrementSize(count * WORD_SIZE);
+}
+
+void AssemblyDirectives::wordPassTwo(AssemblyLineArguments* args) {
+  ArgVector arguments = *(args->args);
+  
+  for (auto arg : arguments) {
+    string symbolValue = *arg.value;
+    if (arg.type == ARG_LIT) { 
+      wordLiteral(symbolValue);
+    }
+    else {
+      wordSymbol(symbolValue);
+    }
+
+    SectionTable::getInstance().getCurrentSection()->incrementLocationCounter(WORD_SIZE);
+  }
+}
+
+void AssemblyDirectives::skipPassOne(string literal, int base) {
+  checkNoSection();
+
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
 
   int value = stoi(literal, nullptr, base);
   currentSection->incrementLocationCounter(value);
   currentSection->incrementSize(value);
 }
 
-void AssemblyDirectives::ascii(string str) {
+void AssemblyDirectives::skipPassTwo(string literal, int base) {
+  int value = stoi(literal, nullptr, base);
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+
+  for (int i = 0; i < value; i++) {
+    currentSection->addByteContent((char)0);
+  }
+  currentSection->incrementLocationCounter(value);
+}
+
+void AssemblyDirectives::asciiPassOne(string str) {
   checkNoSection();
 
   Section* currentSection = SectionTable::getInstance().getCurrentSection();
@@ -106,6 +172,16 @@ void AssemblyDirectives::ascii(string str) {
   currentSection->incrementSize(str.length() - 2);
 }
 
+void AssemblyDirectives::asciiPassTwo(string str) {
+  // treba relokacija i bazen literala za string?
+}
+
 void AssemblyDirectives::end() {
+
+  SectionTable& sectiontab = SectionTable::getInstance();
+  for (int i = 0; i < sectiontab.size(); i++) {
+    sectiontab[i]->printSection();
+  }
+
   cout << "End of assembly file" << endl;
 }

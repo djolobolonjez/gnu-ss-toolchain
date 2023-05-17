@@ -1,5 +1,6 @@
 #include "../inc/Assembler.hpp"
 #include "../inc/AssemblyDirectives.hpp"
+#include "../inc/AssemblyInstructions.hpp"
 #include "../inc/SymbolTable.hpp"
 #include "../inc/SectionTable.hpp"
 #include "../inc/Section.hpp"
@@ -14,6 +15,10 @@ Assembler& Assembler::getInstance() {
 
 AssemblyDirectives& Assembler::directives() {
   return AssemblyDirectives::getInstance();
+}
+
+AssemblyInstructions& Assembler::instructions() {
+  return AssemblyInstructions::getInstance();
 }
 
 int Assembler::label(string* labelPtr) {
@@ -46,6 +51,15 @@ int Assembler::label(string* labelPtr) {
   }
 
   return 0;
+}
+
+void Assembler::sectionReset() {
+  SectionTable& sectiontab = SectionTable::getInstance();
+
+  for (int i = 0; i < sectiontab.size(); i++) {
+    sectiontab[i]->resetLocationCounter();
+  }
+  secondPass();
 }
 
 void Assembler::printSymbolTable() {
