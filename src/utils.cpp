@@ -1,4 +1,7 @@
 #include "../inc/utils.hpp"
+#include "../inc/defs.h"
+#include "../inc/Section.hpp"
+#include "../inc/SectionTable.hpp"
 
 namespace Utils {
   AssemblyLineArguments* create_arguments() {
@@ -15,5 +18,19 @@ namespace Utils {
     }
 
     return base;
+  }
+
+  void addWord(Section*& section, int data) {
+    for (int i = 0; i < WORD_SIZE; i++) {
+      section->addByteContent(BYTEMASK(data));
+      data >>= 8;
+    }
+  
+  }
+
+  void toBytesHex(stringstream& ss) {
+    int data;
+    ss >> hex >> data;
+    Utils::addWord(SectionTable::getInstance().getCurrentSection(), data);
   }
 }

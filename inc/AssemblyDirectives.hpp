@@ -12,8 +12,6 @@ private:
   AssemblyDirectives() = default;
 
   void checkNoSection();
-  
-  void addWord(Section*&, int);
   void wordLiteral(string value);
   void wordSymbol(string symbol); 
 public:

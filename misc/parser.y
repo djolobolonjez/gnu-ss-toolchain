@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "inc/utils.hpp"
 #include "inc/directives_wrapper.h"
+#include "inc/instructions_wrapper.h"
 
 extern int yylex();
 extern int yyparse();
@@ -40,9 +41,11 @@ static bool secondPass = false;
 %token <sval> TOKEN_SYM
 %token <sval> TOKEN_LITERAL
 %token <sval> TOKEN_STRING
+%token <sval> TOKEN_GPR
 
 %type <args> symlist
 %type <args> expr
+%type <sval> register
 
 %%
 
@@ -52,43 +55,67 @@ input:
 
 line:
   endls
-  | TOKEN_SYM TOKEN_COLON TOKEN_GLOBAL symlist endls { _asm_label($1, secondPass); _asm_dir_global($4, secondPass); delete $1; delete $4; }
-  | TOKEN_GLOBAL symlist endls { _asm_dir_global($2, secondPass); delete $2; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_EXTERN symlist endls { _asm_label($1, secondPass); _asm_dir_extern($4, secondPass); delete $4; delete $1; }
-  | TOKEN_EXTERN symlist endls { _asm_dir_extern($2, secondPass); delete $2; } 
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_SECTION TOKEN_SYM endls { _asm_label($1, secondPass); _asm_dir_section($4, secondPass); delete $1; delete $4; }
-  | TOKEN_SECTION TOKEN_SYM endls { _asm_dir_section($2, secondPass); delete $2; }
-
-  | TOKEN_SYM TOKEN_COLON endls { _asm_label($1, secondPass); delete $1; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_WORD symlist endls { _asm_label($1, secondPass); _asm_dir_word($4, secondPass); delete $1; delete $4; } 
-  | TOKEN_WORD symlist endls { _asm_dir_word($2, secondPass); delete $2; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_SKIP TOKEN_LITERAL endls { _asm_label($1, secondPass); _asm_dir_skip($4, secondPass); delete $1; delete $4; }
-  | TOKEN_SKIP TOKEN_LITERAL endls { _asm_dir_skip($2, secondPass); delete $2; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_ASCII TOKEN_STRING endls { _asm_label($1, secondPass); _asm_dir_ascii($4, secondPass); delete $1; delete $4; }
-  | TOKEN_ASCII TOKEN_STRING endls { _asm_dir_ascii($2, secondPass); delete $2; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_EQU TOKEN_SYM TOKEN_COMMA expr endls { cout << "Matched .equ directive with symbol preceding" << endl; }
-  | TOKEN_EQU TOKEN_SYM TOKEN_COMMA expr endls { cout << "Matched .equ directive" << endl; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_END { _asm_label($1, secondPass); delete $1; _asm_dir_end(secondPass); return 15; }
-  | TOKEN_END { _asm_dir_end(secondPass); return 15; }
-
-  | TOKEN_SYM TOKEN_COLON TOKEN_HALT endls { cout << "halt instruction" << endl; }
-  | TOKEN_HALT endls { cout << "halt" << endl; }
+  | directives
+  | instructions
+  ;
   
-  | TOKEN_SYM TOKEN_COLON TOKEN_INT endls { cout << "int instruction" << endl; }
-  | TOKEN_INT endls { cout << "int" << endl; }
 
+directives:
+  TOKEN_SYM TOKEN_COLON TOKEN_GLOBAL symlist endls { _asm_label($1, secondPass); _asm_dir_global($4, secondPass); delete $1; delete $4; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_EXTERN symlist endls { _asm_label($1, secondPass); _asm_dir_extern($4, secondPass); delete $4; delete $1; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_SECTION TOKEN_SYM endls { _asm_label($1, secondPass); _asm_dir_section($4, secondPass); delete $1; delete $4; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_WORD symlist endls { _asm_label($1, secondPass); _asm_dir_word($4, secondPass); delete $1; delete $4; } 
+  | TOKEN_SYM TOKEN_COLON TOKEN_SKIP TOKEN_LITERAL endls { _asm_label($1, secondPass); _asm_dir_skip($4, secondPass); delete $1; delete $4; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_ASCII TOKEN_STRING endls { _asm_label($1, secondPass); _asm_dir_ascii($4, secondPass); delete $1; delete $4; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_EQU TOKEN_SYM TOKEN_COMMA expr endls { cout << "Matched .equ directive with symbol preceding" << endl; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_END { _asm_label($1, secondPass); delete $1; _asm_dir_end(secondPass); return 15; }
+
+  | TOKEN_GLOBAL symlist endls { _asm_dir_global($2, secondPass); delete $2; }
+  | TOKEN_EXTERN symlist endls { _asm_dir_extern($2, secondPass); delete $2; } 
+  | TOKEN_SECTION TOKEN_SYM endls { _asm_dir_section($2, secondPass); delete $2; }
+  | TOKEN_WORD symlist endls { _asm_dir_word($2, secondPass); delete $2; }
+  | TOKEN_SKIP TOKEN_LITERAL endls { _asm_dir_skip($2, secondPass); delete $2; }
+  | TOKEN_ASCII TOKEN_STRING endls { _asm_dir_ascii($2, secondPass); delete $2; }
+  | TOKEN_EQU TOKEN_SYM TOKEN_COMMA expr endls { cout << "Matched .equ directive" << endl; }
+  | TOKEN_END { _asm_dir_end(secondPass); return 15; }
+  | TOKEN_SYM TOKEN_COLON endls { _asm_label($1, secondPass); delete $1; }
+  ;
+  
+  
+instructions:
+  TOKEN_SYM TOKEN_COLON TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } _asm_label($1, secondPass); instructionFirstPass(); }
+  | TOKEN_SYM TOKEN_COLON TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } _asm_label($1, secondPass); instructionFirstPass(); }
   | TOKEN_SYM TOKEN_COLON TOKEN_IRET endls { cout << "iret instruction" << endl; }
-  | TOKEN_IRET endls { cout << "iret" << endl; }
-
   | TOKEN_SYM TOKEN_COLON TOKEN_RET endls { cout << "ret instruction" << endl; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_XCHG register TOKEN_COMMA register endls { 
+    if (secondPass) { _asm_instr_xchg($4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+  }
+  | TOKEN_SYM TOKEN_COLON TOKEN_ADD register TOKEN_COMMA register endls {
+    if(secondPass) { _asm_instr_arithmetic(0, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+  }
+  | TOKEN_SYM TOKEN_COLON TOKEN_SUB register TOKEN_COMMA register endls {
+    if(secondPass) { _asm_instr_arithmetic(1, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+  }
+  | TOKEN_SYM TOKEN_COLON TOKEN_MUL register TOKEN_COMMA register endls {
+    if(secondPass) { _asm_instr_arithmetic(2, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+  }
+  | TOKEN_SYM TOKEN_COLON TOKEN_DIV register TOKEN_COMMA register endls {
+    if(secondPass) { _asm_instr_arithmetic(3, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+  }
+  | TOKEN_SYM TOKEN_COLON TOKEN_NOT register { if (secondPass) { 
+      _asm_instr_logical(0, $4, $4); } _asm_label($1, secondPass); instructionFirstPass();
+    }
+
+  | TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
+  | TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } instructionFirstPass(); }
+  | TOKEN_IRET endls { cout << "iret" << endl; }
   | TOKEN_RET endls { cout << "ret" << endl; }
+  | TOKEN_XCHG register TOKEN_COMMA register endls { if (secondPass) { _asm_instr_xchg($2, $4); } instructionFirstPass(); }
+  | TOKEN_ADD register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(0, $2, $4); } instructionFirstPass(); }
+  | TOKEN_SUB register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(1, $2, $4); } instructionFirstPass(); }
+  | TOKEN_MUL register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(2, $2, $4); } instructionFirstPass(); }  
+  | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
+  | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
   ;
 
 symlist:
@@ -96,6 +123,10 @@ symlist:
   | TOKEN_LITERAL { $$ = Utils::create_arguments(); $$->args->push_back({$1, 1}); }
   | symlist TOKEN_COMMA TOKEN_LITERAL { $1->args->push_back({$3, 1}); $$ = $1; }
   | symlist TOKEN_COMMA TOKEN_SYM { $1->args->push_back({$3, 0}); $$ = $1; }
+  ;
+
+register: 
+  TOKEN_PERCENT TOKEN_GPR { $$ = $2; }
   ;
 
 expr:
@@ -147,7 +178,7 @@ int main(int argc, char** argv) {
   }
 
   fseek(fp, 0, SEEK_SET);
-  secondPass = true;
+  secondPass = !secondPass;
 
   try {
     while(yyparse() != 15) { }

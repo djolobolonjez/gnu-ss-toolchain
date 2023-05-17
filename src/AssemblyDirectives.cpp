@@ -19,13 +19,6 @@ void AssemblyDirectives::checkNoSection() {
   }
 }
 
-void AssemblyDirectives::addWord(Section*& section, int data) {
-  for (int i = 0; i < WORD_SIZE; i++) {
-    section->addByteContent(BYTEMASK(data));
-    data >>= 8;
-  }
-}
-
 void AssemblyDirectives::wordSymbol(string symbol) {
   Section*& currentSection = SectionTable::getInstance().getCurrentSection();
   SymbolTable& symtab = SymbolTable::getInstance();
@@ -38,17 +31,17 @@ void AssemblyDirectives::wordSymbol(string symbol) {
   SymbolTableEntry*& stEntry = symtab[symbolIndex];
 
   if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
-    addWord(currentSection, stEntry->getValue());
+    Utils::addWord(currentSection, stEntry->getValue());
   }
   else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-    addWord(currentSection, 0);
+    Utils::addWord(currentSection, 0);
     // dodati relokaciju
   }
 }
 
 void AssemblyDirectives::wordLiteral(string value) {
   int data = stoi(value, nullptr, Utils::findBase(value));
-  addWord(SectionTable::getInstance().getCurrentSection(), data);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), data);
 }
 
 void AssemblyDirectives::global(AssemblyLineArguments* args) {
