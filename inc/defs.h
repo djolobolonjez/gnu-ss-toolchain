@@ -25,4 +25,6 @@
 #define WORD_SIZE 1 << 2
 #define BYTEMASK(value) (value & 0xff)
 
+#define R_X86_64_32 1
+
 #endif // DEFS_H_

@@ -32,6 +32,8 @@ void AssemblyInstructions::interrupt() {
 }
 
 void AssemblyInstructions::xchg(string regOne, string regTwo) {
+
+  // TODO: Ispraviti xchg, treba razloziti na asemblerske instrukcije!!!
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   stringstream ss;
 

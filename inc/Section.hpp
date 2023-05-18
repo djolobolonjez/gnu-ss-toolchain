@@ -35,7 +35,7 @@ public:
 
   void addByteContent(char byte) { content.push_back(byte); }
 
-  RelocationTable* getRelaLink() const { return relaLink; }
+  RelocationTable*& getRelaLink() { return relaLink; }
 
   void printSection() {
     cout << "Section: " << name << endl;
@@ -56,6 +56,8 @@ public:
     }
     cout << endl;
   }
+
+  void printRelaTable();
 };
 
 #endif // SECTION_HPP_

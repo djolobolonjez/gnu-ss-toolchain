@@ -5,6 +5,7 @@
 #include "../inc/Section.hpp"
 #include "../inc/AssemblyException.hpp"
 #include "../inc/utils.hpp"
+#include "../inc/RelocationTable.hpp"
 #include <iomanip>
 
 AssemblyDirectives& AssemblyDirectives::getInstance() {
@@ -30,12 +31,23 @@ void AssemblyDirectives::wordSymbol(string symbol) {
   int symbolIndex = symtab.getIndexOfEntry(symbol);
   SymbolTableEntry*& stEntry = symtab[symbolIndex];
 
+  RelocationTable*& relatab = currentSection->getRelaLink();
+  int locationCounter = currentSection->getLocationCounter();
+  RelocationTableEntry* relaEntry = nullptr;
+
   if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
     Utils::addWord(currentSection, stEntry->getValue());
+    relaEntry = new RelocationTableEntry(
+      locationCounter, RELA_INFO(stEntry->getIndex(), R_X86_64_32), stEntry->getValue()
+    );
   }
   else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-    Utils::addWord(currentSection, 0);
-    // dodati relokaciju
+    Utils::addWord(currentSection, 0);  
+    relaEntry = new RelocationTableEntry(locationCounter, RELA_INFO(symbolIndex, R_X86_64_32));
+  }
+
+  if (relaEntry != nullptr) {
+    relatab->addRelocation(relaEntry);
   }
 }
 
@@ -174,6 +186,7 @@ void AssemblyDirectives::end() {
   SectionTable& sectiontab = SectionTable::getInstance();
   for (int i = 0; i < sectiontab.size(); i++) {
     sectiontab[i]->printSection();
+    sectiontab[i]->printRelaTable();
   }
 
   cout << "End of assembly file" << endl;

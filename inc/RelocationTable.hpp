@@ -6,23 +6,12 @@
 
 class RelocationTable {
 private:
-  struct RelocationTableEntry {
-    ulong offset;
-    ulong info;
-    int addend;
-
-    RelocationTableEntry(ulong _offset, ulong _info, int _addend = 0) {
-      offset = _offset;
-      info = _info;
-      addend = _addend;
-    } 
-  };
-
   vector<RelocationTableEntry*> relatab;
 
 public:
   int size() const { return relatab.size(); }
 
+  void addRelocation(RelocationTableEntry* relatabEntry) { relatab.push_back(relatabEntry); }
   RelocationTableEntry*& operator[](int index) { return relatab[index]; }
 };
 

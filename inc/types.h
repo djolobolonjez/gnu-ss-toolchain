@@ -51,12 +51,25 @@ struct SymbolTableEntry {
     string getName() const { return name; }
     byte getInfo() const { return info; }
     ulong getValue() const { return value; }
+    int getIndex() const { return index; }
 
     void setDefined(bool _defined) { defined = _defined; }
     void setExtern(bool _ext) { ext = _ext; }
     void setIndex(int _index) { index = _index; } 
     void setInfo(byte _info) { info = _info; }
     void setValue(ulong _value) { value = _value; }
+  };
+
+  struct RelocationTableEntry {
+    ulong offset;
+    ulong info;
+    int addend;
+
+    RelocationTableEntry(ulong _offset, ulong _info, int _addend = 0) {
+      offset = _offset;
+      info = _info;
+      addend = _addend;
+    } 
   };
 
 #endif // TYPES_H_
