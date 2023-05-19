@@ -24,20 +24,18 @@ void AssemblyInstructions::firstPass() {
 }
 
 void AssemblyInstructions::halt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), 0);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), HALT);
 }
 
 void AssemblyInstructions::interrupt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), 0x10000000);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT);
 }
 
 void AssemblyInstructions::xchg(string regOne, string regTwo) {
-
-  // TODO: Ispraviti xchg, treba razloziti na asemblerske instrukcije!!!
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   stringstream ss;
 
-  ss << hex << 0x40;
+  ss << hex << XCHG;
   ss << hex << setw(2) << setfill('0') << first;
   ss << hex << setw(1) << second;
   ss << hex << setw(3) << 0;
@@ -49,7 +47,7 @@ void AssemblyInstructions::arithmetic(int modificator, string regOne, string reg
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   
   stringstream ss;
-  ss << hex << setw(1) << 0x5 << modificator << second << first << second;
+  ss << hex << setw(1) << ARITHMETIC << modificator << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
   Utils::toBytesHex(ss);
@@ -59,8 +57,26 @@ void AssemblyInstructions::logical(int modificator, string regOne, string regTwo
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   
   stringstream ss;
-  ss << hex << setw(1) << 0x6 << modificator << second << first << second;
+  ss << hex << setw(1) << LOGICAL << modificator << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
+  Utils::toBytesHex(ss);
+}
+
+void AssemblyInstructions::shl(string regOne, string regTwo) {
+  int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
+
+  stringstream ss;
+  ss << hex << setw(1) << SHL << first << first << second;
+  ss << hex << setfill('0') << setw(3) << 0;
+  Utils::toBytesHex(ss);
+}
+
+void AssemblyInstructions::shr(string regOne, string regTwo) {
+  int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
+
+  stringstream ss;
+  ss << hex << setw(1) << SHR << first << first << second;
+  ss << hex << setfill('0') << setw(3) << 0;
   Utils::toBytesHex(ss);
 }

@@ -17,6 +17,8 @@ public:
   void xchg(string, string);
   void arithmetic(int, string, string);
   void logical(int, string, string);
+  void shl(string, string);
+  void shr(string, string);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

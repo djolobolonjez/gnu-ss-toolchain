@@ -25,6 +25,17 @@
 #define WORD_SIZE 1 << 2
 #define BYTEMASK(value) (value & 0xff)
 
+#define R_X86_64_PC32 0
 #define R_X86_64_32 1
+
+#define HALT 0x00000000
+#define INT  0x10000000
+#define XCHG 0x40
+#define ARITHMETIC 0x5
+#define LOGICAL 0x6
+#define SHL 0x70
+#define SHR 0x71
+#define ST 0x80
+#define LD 0x90
 
 #endif // DEFS_H_

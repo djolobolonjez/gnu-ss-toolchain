@@ -14,6 +14,7 @@ j:
 div %r11, %r13
 not %r2
 add %r1, %r2
+ld %r1, %r2
 .section other_section
 .word 8, i
 c: .extern h

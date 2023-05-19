@@ -8,6 +8,10 @@ namespace Utils {
     return new AssemblyLineArguments();
   }
 
+  InstructionArguments* create_instruction(int mod) {
+    return new InstructionArguments(mod);
+  }
+
   int findBase(string value) {
     int base = 10;
     if (value.substr(0,2) == "0x") {

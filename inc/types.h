@@ -25,9 +25,9 @@ struct AssemblyLineArguments {
 };
 
 struct InstructionArguments : public AssemblyLineArguments {
-
-  InstructionArguments() {
-    
+  int modificator;
+  InstructionArguments(int _modificator) {
+    modificator = _modificator;
   }
 };
 

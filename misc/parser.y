@@ -25,6 +25,7 @@ static bool secondPass = false;
   int ival;
   string* sval;
   AssemblyLineArguments* args;
+  InstructionArguments* instr;
 }
 
 %token TOKEN_ENDL TOKEN_COMMA TOKEN_COLON TOKEN_PLUS TOKEN_MINUS TOKEN_PERCENT TOKEN_DOLLAR 
@@ -46,6 +47,7 @@ static bool secondPass = false;
 %type <args> symlist
 %type <args> expr
 %type <sval> register
+%type <instr> operand
 
 %%
 
@@ -102,8 +104,11 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_DIV register TOKEN_COMMA register endls {
     if(secondPass) { _asm_instr_arithmetic(3, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
   }
-  | TOKEN_SYM TOKEN_COLON TOKEN_NOT register { if (secondPass) { 
+  | TOKEN_SYM TOKEN_COLON TOKEN_NOT register endls { if (secondPass) { 
       _asm_instr_logical(0, $4, $4); } _asm_label($1, secondPass); instructionFirstPass();
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_LD operand TOKEN_COMMA register endls { 
+      if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } instructionFirstPass();
     }
 
   | TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
@@ -116,6 +121,7 @@ instructions:
   | TOKEN_MUL register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(2, $2, $4); } instructionFirstPass(); }  
   | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
   | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
+  | TOKEN_LD operand TOKEN_COMMA register endls { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } instructionFirstPass(); }
   ;
 
 symlist:
@@ -127,6 +133,12 @@ symlist:
 
 register: 
   TOKEN_PERCENT TOKEN_GPR { $$ = $2; }
+  ;
+
+operand:
+  register { $$ = Utils::create_instruction(0x1); $$->args->push_back({$1, 2}); }
+  | TOKEN_DOLLAR TOKEN_LITERAL { }
+  | TOKEN_DOLLAR TOKEN_SYM { }
   ;
 
 expr:

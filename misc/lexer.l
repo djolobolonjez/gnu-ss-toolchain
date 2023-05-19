@@ -5,6 +5,7 @@
 using namespace std;
 struct AssemblyLineArguments;
 struct arg;
+struct InstructionArguments;
 
 int line_num = 1;
 %}

@@ -7,11 +7,13 @@
 using namespace std;
 
 struct AssemblyLineArguments;
+struct InstructionArguments;
 class Section;
 
 namespace Utils {
 
   AssemblyLineArguments* create_arguments();
+  InstructionArguments* create_instruction(int);
   int findBase(string value);
   void addWord(Section*& section, int data);
   void toBytesHex(stringstream& ss);
