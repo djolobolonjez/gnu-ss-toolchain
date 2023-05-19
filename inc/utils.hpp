@@ -15,8 +15,8 @@ namespace Utils {
   AssemblyLineArguments* create_arguments();
   InstructionArguments* create_instruction(int);
   int findBase(string value);
-  void addWord(Section*& section, int data);
-  void toBytesHex(stringstream& ss);
+  void addWord(Section*& section, unsigned data, bool endianness);
+  void toBytesHex(stringstream& ss, bool endianness);
 }
 
 #endif // UTILS_H_

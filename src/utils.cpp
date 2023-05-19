@@ -24,17 +24,25 @@ namespace Utils {
     return base;
   }
 
-  void addWord(Section*& section, int data) {
-    for (int i = 0; i < WORD_SIZE; i++) {
-      section->addByteContent(BYTEMASK(data));
-      data >>= 8;
+  void addWord(Section*& section, unsigned data, bool endianness) {
+    if (endianness) {
+      int offset = 24;
+      for (int i = 0; i < WORD_SIZE; i++) {
+        section->addByteContent((data >> offset) & 0xff);
+        offset -= (2 * WORD_SIZE);
+      }
     }
-  
+    else {
+      for (int i = 0; i < WORD_SIZE; i++) {
+        section->addByteContent(BYTEMASK(data));
+        data >>= 8;
+      }
+    }
   }
 
-  void toBytesHex(stringstream& ss) {
-    int data;
+  void toBytesHex(stringstream& ss, bool endianness) {
+    unsigned data;
     ss >> hex >> data;
-    Utils::addWord(SectionTable::getInstance().getCurrentSection(), data);
+    Utils::addWord(SectionTable::getInstance().getCurrentSection(), data, endianness);
   }
 }

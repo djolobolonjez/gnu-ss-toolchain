@@ -24,11 +24,11 @@ void AssemblyInstructions::firstPass() {
 }
 
 void AssemblyInstructions::halt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), HALT);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), HALT, true);
 }
 
 void AssemblyInstructions::interrupt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT, true);
 }
 
 void AssemblyInstructions::xchg(string regOne, string regTwo) {
@@ -40,7 +40,7 @@ void AssemblyInstructions::xchg(string regOne, string regTwo) {
   ss << hex << setw(1) << second;
   ss << hex << setw(3) << 0;
 
-  Utils::toBytesHex(ss);
+  Utils::toBytesHex(ss, true);
 }
 
 void AssemblyInstructions::arithmetic(int modificator, string regOne, string regTwo) {
@@ -50,7 +50,7 @@ void AssemblyInstructions::arithmetic(int modificator, string regOne, string reg
   ss << hex << setw(1) << ARITHMETIC << modificator << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
-  Utils::toBytesHex(ss);
+  Utils::toBytesHex(ss, true);
 }
 
 void AssemblyInstructions::logical(int modificator, string regOne, string regTwo) {
@@ -60,7 +60,7 @@ void AssemblyInstructions::logical(int modificator, string regOne, string regTwo
   ss << hex << setw(1) << LOGICAL << modificator << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
-  Utils::toBytesHex(ss);
+  Utils::toBytesHex(ss, true);
 }
 
 void AssemblyInstructions::shl(string regOne, string regTwo) {
@@ -69,7 +69,7 @@ void AssemblyInstructions::shl(string regOne, string regTwo) {
   stringstream ss;
   ss << hex << setw(1) << SHL << first << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
-  Utils::toBytesHex(ss);
+  Utils::toBytesHex(ss, true);
 }
 
 void AssemblyInstructions::shr(string regOne, string regTwo) {
@@ -78,5 +78,30 @@ void AssemblyInstructions::shr(string regOne, string regTwo) {
   stringstream ss;
   ss << hex << setw(1) << SHR << first << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
-  Utils::toBytesHex(ss);
+  Utils::toBytesHex(ss, true);
+}
+
+void AssemblyInstructions::ld(InstructionArguments* instruction) {
+  ArgVector arguments = *(instruction->args);
+  int mod = instruction->modificator;
+
+  stringstream ss;
+  ss << hex << setw(1) << (LD | mod);
+  int first = 0, second = 0, third = 0, displacement = 0;
+
+  switch (mod) {
+    case 0x1: {
+      first = stoi(arguments[1].value->substr(1));
+      second = stoi(arguments[0].value->substr(1));
+      
+      ss << hex << setw(1) << first << second << third << setfill('0') << setw(3) << displacement;
+      break;
+    }
+
+    default: {
+      throw AssemblyException("Error: Illegal instruction modificator!");
+    }
+  }
+
+  Utils::toBytesHex(ss, true);
 }

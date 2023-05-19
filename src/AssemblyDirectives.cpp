@@ -36,13 +36,13 @@ void AssemblyDirectives::wordSymbol(string symbol) {
   RelocationTableEntry* relaEntry = nullptr;
 
   if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
-    Utils::addWord(currentSection, stEntry->getValue());
+    Utils::addWord(currentSection, stEntry->getValue(), false);
     relaEntry = new RelocationTableEntry(
       locationCounter, RELA_INFO(stEntry->getIndex(), R_X86_64_32), stEntry->getValue()
     );
   }
   else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-    Utils::addWord(currentSection, 0);  
+    Utils::addWord(currentSection, 0, false);  
     relaEntry = new RelocationTableEntry(locationCounter, RELA_INFO(symbolIndex, R_X86_64_32));
   }
 
@@ -53,7 +53,7 @@ void AssemblyDirectives::wordSymbol(string symbol) {
 
 void AssemblyDirectives::wordLiteral(string value) {
   int data = stoi(value, nullptr, Utils::findBase(value));
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), data);
+  Utils::addWord(SectionTable::getInstance().getCurrentSection(), data, false);
 }
 
 void AssemblyDirectives::global(AssemblyLineArguments* args) {

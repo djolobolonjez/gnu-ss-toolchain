@@ -23,7 +23,7 @@
 #define ARG_OTHER 2
 
 #define WORD_SIZE 1 << 2
-#define BYTEMASK(value) (value & 0xff)
+#define BYTEMASK(value) ((unsigned char)value & 0xff)
 
 #define R_X86_64_PC32 0
 #define R_X86_64_32 1

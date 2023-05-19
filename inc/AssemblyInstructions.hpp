@@ -4,6 +4,8 @@
 #include <iostream>
 using namespace std;
 
+struct InstructionArguments;
+
 class AssemblyInstructions {
 
 private:
@@ -19,6 +21,7 @@ public:
   void logical(int, string, string);
   void shl(string, string);
   void shr(string, string);
+  void ld(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_
