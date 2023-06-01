@@ -85,43 +85,51 @@ directives:
   
   
 instructions:
-  TOKEN_SYM TOKEN_COLON TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } _asm_label($1, secondPass); instructionFirstPass(); }
-  | TOKEN_SYM TOKEN_COLON TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } _asm_label($1, secondPass); instructionFirstPass(); }
+  TOKEN_SYM TOKEN_COLON TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } else { _asm_label($1, secondPass); instructionFirstPass(); } }
+  | TOKEN_SYM TOKEN_COLON TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } else { _asm_label($1, secondPass); instructionFirstPass(); } }
   | TOKEN_SYM TOKEN_COLON TOKEN_IRET endls { cout << "iret instruction" << endl; }
   | TOKEN_SYM TOKEN_COLON TOKEN_RET endls { cout << "ret instruction" << endl; }
   | TOKEN_SYM TOKEN_COLON TOKEN_XCHG register TOKEN_COMMA register endls { 
-    if (secondPass) { _asm_instr_xchg($4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+    if (secondPass) { _asm_instr_xchg($4, $6); } else { _asm_label($1, secondPass); instructionFirstPass(); }
   }
   | TOKEN_SYM TOKEN_COLON TOKEN_ADD register TOKEN_COMMA register endls {
-    if(secondPass) { _asm_instr_arithmetic(0, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+    if(secondPass) { _asm_instr_arithmetic(0, $4, $6); } else { _asm_label($1, secondPass); instructionFirstPass(); }  
   }
   | TOKEN_SYM TOKEN_COLON TOKEN_SUB register TOKEN_COMMA register endls {
-    if(secondPass) { _asm_instr_arithmetic(1, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+    if(secondPass) { _asm_instr_arithmetic(1, $4, $6); } else { _asm_label($1, secondPass); instructionFirstPass(); }
   }
   | TOKEN_SYM TOKEN_COLON TOKEN_MUL register TOKEN_COMMA register endls {
-    if(secondPass) { _asm_instr_arithmetic(2, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+    if(secondPass) { _asm_instr_arithmetic(2, $4, $6); } else { _asm_label($1, secondPass); instructionFirstPass(); }
   }
   | TOKEN_SYM TOKEN_COLON TOKEN_DIV register TOKEN_COMMA register endls {
-    if(secondPass) { _asm_instr_arithmetic(3, $4, $6); } _asm_label($1, secondPass); instructionFirstPass();
+    if(secondPass) { _asm_instr_arithmetic(3, $4, $6); } else { _asm_label($1, secondPass); instructionFirstPass(); }
   }
   | TOKEN_SYM TOKEN_COLON TOKEN_NOT register endls { if (secondPass) { 
-      _asm_instr_logical(0, $4, $4); } _asm_label($1, secondPass); instructionFirstPass();
+      _asm_instr_logical(0, $4, $4); } else { _asm_label($1, secondPass); instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_LD operand TOKEN_COMMA register endls { 
-      if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } instructionFirstPass();
+      if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } else { instructionFirstPass(); }
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_PUSH operand endls {
+      if (secondPass) { _asm_instr_push($4); } else { instructionFirstPass(); }
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_POP operand endls {
+      if (secondPass) { $4->modificator = 0x3; _asm_instr_pop($4); } else { instructionFirstPass(); }
     }
 
-  | TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
-  | TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } instructionFirstPass(); }
+  | TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } else { instructionFirstPass(); } }
+  | TOKEN_INT endls { if (secondPass) { _asm_instr_int(); } else { instructionFirstPass(); } }
   | TOKEN_IRET endls { cout << "iret" << endl; }
   | TOKEN_RET endls { cout << "ret" << endl; }
   | TOKEN_XCHG register TOKEN_COMMA register endls { if (secondPass) { _asm_instr_xchg($2, $4); } instructionFirstPass(); }
-  | TOKEN_ADD register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(0, $2, $4); } instructionFirstPass(); }
-  | TOKEN_SUB register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(1, $2, $4); } instructionFirstPass(); }
-  | TOKEN_MUL register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(2, $2, $4); } instructionFirstPass(); }  
-  | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
-  | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
-  | TOKEN_LD operand TOKEN_COMMA register endls { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } instructionFirstPass(); }
+  | TOKEN_ADD register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(0, $2, $4); } else { instructionFirstPass(); } }
+  | TOKEN_SUB register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(1, $2, $4); } else { instructionFirstPass(); } }
+  | TOKEN_MUL register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(2, $2, $4); } else { instructionFirstPass(); } }  
+  | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } else { instructionFirstPass(); } }
+  | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } else { instructionFirstPass(); } }
+  | TOKEN_LD operand TOKEN_COMMA register endls { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } else { instructionFirstPass(); } }
+  | TOKEN_PUSH operand { if (secondPass) { _asm_instr_push($2); } else { instructionFirstPass(); } }
+  | TOKEN_POP operand { if (secondPass) { $2->modificator = 0x3; _asm_instr_pop($2); } else { instructionFirstPass(); } }
   ;
 
 symlist:
@@ -137,6 +145,7 @@ register:
 
 operand:
   register { $$ = Utils::create_instruction(0x1); $$->args->push_back({$1, 2}); }
+  | TOKEN_LEFT_SB register TOKEN_RIGHT_SB { $$ = Utils::create_instruction(0x2); $$->args->push_back({$2, 2}); }
   | TOKEN_DOLLAR TOKEN_LITERAL { }
   | TOKEN_DOLLAR TOKEN_SYM { }
   ;

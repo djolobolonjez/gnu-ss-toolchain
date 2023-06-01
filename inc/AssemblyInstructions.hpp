@@ -10,6 +10,12 @@ class AssemblyInstructions {
 
 private:
   AssemblyInstructions() = default;
+  
+  struct opcode {
+    int first, second, third, displacement;
+    opcode(int f = 0, int s = 0, int t = 0, int disp = 0) : first(f), second(s), third(t), displacement(disp) { }
+  };
+
 public:
   static AssemblyInstructions& getInstance();
   void firstPass();
@@ -21,7 +27,9 @@ public:
   void logical(int, string, string);
   void shl(string, string);
   void shr(string, string);
-  void ld(InstructionArguments*);
+  void ld(InstructionArguments*, opcode);
+  void push(InstructionArguments*);
+  void pop(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

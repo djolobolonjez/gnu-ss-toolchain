@@ -81,21 +81,33 @@ void AssemblyInstructions::shr(string regOne, string regTwo) {
   Utils::toBytesHex(ss, true);
 }
 
-void AssemblyInstructions::ld(InstructionArguments* instruction) {
+void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
   ArgVector arguments = *(instruction->args);
   int mod = instruction->modificator;
 
   stringstream ss;
   ss << hex << setw(1) << (LD | mod);
-  int first = 0, second = 0, third = 0, displacement = 0;
 
   switch (mod) {
     case 0x1: {
-      first = stoi(arguments[1].value->substr(1));
-      second = stoi(arguments[0].value->substr(1));
+      code.first = stoi(arguments[1].value->substr(1));
+      code.second = stoi(arguments[0].value->substr(1));
       
-      ss << hex << setw(1) << first << second << third << setfill('0') << setw(3) << displacement;
+      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
       break;
+    }
+
+    case 0x2: {
+      code.first = stoi(arguments[1].value->substr(1));
+      code.second = stoi(arguments[0].value->substr(1));
+      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
+      break;
+    }
+
+    case 0x3 : {
+      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
+      break;
+      //mozda ce i ovo biti suvisno
     }
 
     default: {
@@ -104,4 +116,12 @@ void AssemblyInstructions::ld(InstructionArguments* instruction) {
   }
 
   Utils::toBytesHex(ss, true);
+}
+
+void AssemblyInstructions::push(InstructionArguments* instruction) {
+
+}
+
+void AssemblyInstructions::pop(InstructionArguments* instruction) {
+  ld(instruction, {0, 14, 0, 4});
 }

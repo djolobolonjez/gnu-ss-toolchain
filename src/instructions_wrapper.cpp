@@ -36,9 +36,13 @@ void _asm_instr_shr(string* regOne, string* regTwo) {
 }
 
 void _asm_instr_ld(InstructionArguments* args) {
-  // ArgVector arguments = *(args->args);
-  // for (auto arg: arguments) {
-  //   cout << *arg.value << " " << arg.type << endl;
-  // }
-  Assembler::getInstance().instructions().ld(args);
+  Assembler::getInstance().instructions().ld(args, { });
+}
+
+void _asm_instr_push(InstructionArguments* args) {
+
+}
+
+void _asm_instr_pop(InstructionArguments* args) {
+  Assembler::getInstance().instructions().pop(args);
 }

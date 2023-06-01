@@ -16,5 +16,7 @@ void _asm_instr_logical(int, string*, string*);
 void _asm_instr_shl(string*, string*);
 void _asm_instr_shr(string*, string*);
 void _asm_instr_ld(InstructionArguments*);
+void _asm_instr_push(InstructionArguments*);
+void _asm_instr_pop(InstructionArguments*);
 
 #endif // INSTRUCTIONS_WRAPPER_H_
