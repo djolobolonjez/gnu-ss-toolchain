@@ -15,7 +15,7 @@ namespace Utils {
   AssemblyLineArguments* create_arguments();
   InstructionArguments* create_instruction(int);
   int findBase(string value);
-  void addWord(Section*& section, unsigned data, bool endianness);
+  void addWord(Section*& section, unsigned data, bool endianness, int container = 0);
   void toBytesHex(stringstream& ss, bool endianness);
 }
 

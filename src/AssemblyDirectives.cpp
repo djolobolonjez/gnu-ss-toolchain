@@ -6,6 +6,7 @@
 #include "../inc/AssemblyException.hpp"
 #include "../inc/utils.hpp"
 #include "../inc/RelocationTable.hpp"
+#include "../inc/Assembler.hpp"
 #include <iomanip>
 
 AssemblyDirectives& AssemblyDirectives::getInstance() {
@@ -164,7 +165,7 @@ void AssemblyDirectives::skipPassTwo(string literal, int base) {
   Section*& currentSection = SectionTable::getInstance().getCurrentSection();
 
   for (int i = 0; i < value; i++) {
-    currentSection->addByteContent((char)0);
+    currentSection->addByteContent((char)0, 0);
   }
   currentSection->incrementLocationCounter(value);
 }
@@ -182,12 +183,17 @@ void AssemblyDirectives::asciiPassTwo(string str) {
 }
 
 void AssemblyDirectives::end() {
-
   SectionTable& sectiontab = SectionTable::getInstance();
   for (int i = 0; i < sectiontab.size(); i++) {
-    sectiontab[i]->printSection();
-    sectiontab[i]->printRelaTable();
-  }
+      sectiontab[i]->copyLiteralPool();
+    }
+
+  for (int i = 0; i < sectiontab.size(); i++) {
+  sectiontab[i]->printSection();
+  sectiontab[i]->printRelaTable();
 
   cout << "End of assembly file" << endl;
+  }
+
+  
 }

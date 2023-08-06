@@ -19,6 +19,7 @@ private:
 public:
   static AssemblyInstructions& getInstance();
   void firstPass();
+  void literalPool(InstructionArguments*);
 
   void halt();
   void interrupt();
@@ -28,6 +29,8 @@ public:
   void shl(string, string);
   void shr(string, string);
   void ld(InstructionArguments*, opcode);
+  void st(InstructionArguments*, opcode);
+  void ret(InstructionArguments*);
   void push(InstructionArguments*);
   void pop(InstructionArguments*);
 };

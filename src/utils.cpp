@@ -24,17 +24,17 @@ namespace Utils {
     return base;
   }
 
-  void addWord(Section*& section, unsigned data, bool endianness) {
+  void addWord(Section*& section, unsigned data, bool endianness, int container) {
     if (endianness) {
       int offset = 24;
       for (int i = 0; i < WORD_SIZE; i++) {
-        section->addByteContent((data >> offset) & 0xff);
+        section->addByteContent((data >> offset) & 0xff, container);
         offset -= (2 * WORD_SIZE);
       }
     }
     else {
       for (int i = 0; i < WORD_SIZE; i++) {
-        section->addByteContent(BYTEMASK(data));
+        section->addByteContent(BYTEMASK(data), container);
         data >>= 8;
       }
     }

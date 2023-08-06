@@ -4,6 +4,7 @@
 #include "../inc/Section.hpp"
 #include "../inc/defs.h"
 #include "../inc/utils.hpp"
+#include "../inc/SymbolTable.hpp"
 #include <sstream>
 #include <iomanip>
 
@@ -21,6 +22,28 @@ void AssemblyInstructions::firstPass() {
   
   currentSection->incrementLocationCounter(WORD_SIZE);
   currentSection->incrementSize(WORD_SIZE);
+}
+
+void AssemblyInstructions::literalPool(InstructionArguments* instruction) {
+  ArgVector arguments = *(instruction->args);
+  SectionTable& sectiontab = SectionTable::getInstance();
+  Section*& currentSection = sectiontab.getCurrentSection();
+
+  string literal = *(arguments[0].value);
+  map<string, int> literalPool = currentSection->getPool();
+  if (literalPool.find(literal) == literalPool.end()) {
+    literalPool.insert({literal, currentSection->getPoolSize()});
+    unsigned int data;
+
+    if (arguments[0].type == 1) {
+      data = stoi(literal);
+    }
+    else {
+      SymbolTable& symtab = SymbolTable::getInstance();
+      data = symtab[symtab.getIndexOfEntry(literal)]->getValue();
+    }
+    Utils::addWord(currentSection, data, false, 1);
+  }
 }
 
 void AssemblyInstructions::halt() {
@@ -81,6 +104,32 @@ void AssemblyInstructions::shr(string regOne, string regTwo) {
   Utils::toBytesHex(ss, true);
 }
 
+void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
+  ArgVector arguments = *(instruction->args);
+  int mod = instruction->modificator;
+
+  stringstream ss;
+  ss << hex << setw(1) << (ST | mod);
+
+  switch (mod) {
+    case 0x0: case 0x2: {
+      code.first = stoi(arguments[1].value->substr(1));
+      code.second = stoi(arguments[0].value->substr(1));
+
+      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
+      break;
+    }
+    case 0x1: {
+      if (code.first == 0) {
+        code.first = stoi(arguments[0].value->substr(1));
+      }
+      ss << hex << setw(1) << code.first << setw(1) << code.second << setw(1) << code.third << setfill('0') << setw(3) << (code.displacement & 0xfff);
+      break;
+    }
+  }
+  Utils::toBytesHex(ss, true);
+}
+
 void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
   ArgVector arguments = *(instruction->args);
   int mod = instruction->modificator;
@@ -89,37 +138,34 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
   ss << hex << setw(1) << (LD | mod);
 
   switch (mod) {
-    case 0x1: {
+    case 0x1: case 0x2: {
       code.first = stoi(arguments[1].value->substr(1));
       code.second = stoi(arguments[0].value->substr(1));
       
       ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
       break;
     }
-
-    case 0x2: {
-      code.first = stoi(arguments[1].value->substr(1));
-      code.second = stoi(arguments[0].value->substr(1));
-      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
-      break;
-    }
-
     case 0x3 : {
+      if (code.first == 0) {
+        code.first = stoi(arguments[0].value->substr(1));
+      }
+      
       ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
       break;
       //mozda ce i ovo biti suvisno
     }
 
-    default: {
-      throw AssemblyException("Error: Illegal instruction modificator!");
-    }
   }
 
   Utils::toBytesHex(ss, true);
 }
 
-void AssemblyInstructions::push(InstructionArguments* instruction) {
+void AssemblyInstructions::ret(InstructionArguments* instruction) {
+  ld(instruction, {15, 14, 0, 4});
+}
 
+void AssemblyInstructions::push(InstructionArguments* instruction) {
+  st(instruction, {0, 14, 0, -4});
 }
 
 void AssemblyInstructions::pop(InstructionArguments* instruction) {

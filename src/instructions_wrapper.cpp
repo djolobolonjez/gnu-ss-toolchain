@@ -3,6 +3,10 @@
 #include "../inc/AssemblyInstructions.hpp"
 #include "../inc/types.h"
 
+void literalPool(InstructionArguments* instruction) {
+  Assembler::getInstance().instructions().literalPool(instruction);
+}
+
 void instructionFirstPass() {
   Assembler::getInstance().instructions().firstPass();
 }
@@ -39,8 +43,12 @@ void _asm_instr_ld(InstructionArguments* args) {
   Assembler::getInstance().instructions().ld(args, { });
 }
 
-void _asm_instr_push(InstructionArguments* args) {
+void _asm_instr_ret(InstructionArguments* args) {
+  Assembler::getInstance().instructions().ret(args);
+}
 
+void _asm_instr_push(InstructionArguments* args) {
+  Assembler::getInstance().instructions().push(args);
 }
 
 void _asm_instr_pop(InstructionArguments* args) {
