@@ -26,7 +26,7 @@ private:
 public:
   Section(string _name, int _id);
 
-  map<string, int> getPool() { return literalPool; }
+  map<string, int>& getPool() { return literalPool; }
   int getPoolSize() const { return literalPoolContent.size(); }
 
   string getName() const { return name; }
@@ -45,6 +45,12 @@ public:
     }
     else {
       literalPoolContent.push_back(byte);
+    }
+  }
+
+  void updateLiteralPool() {
+    for (auto entry : literalPool) {
+      literalPool[entry.first] = entry.second + locationCounter;
     }
   }
 
@@ -88,6 +94,10 @@ public:
         }
 
         std::cout << std::endl;
+    }
+    cout << endl;
+    for (auto entry: literalPool) {
+      cout << entry.first << ": " << entry.second << endl;
     }
     cout << endl;
   }

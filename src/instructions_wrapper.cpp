@@ -39,6 +39,10 @@ void _asm_instr_shr(string* regOne, string* regTwo) {
   Assembler::getInstance().instructions().shr(*regOne, *regTwo);
 }
 
+void _asm_instr_st(InstructionArguments* args) {
+  Assembler::getInstance().instructions().st(args, { });
+}
+
 void _asm_instr_ld(InstructionArguments* args) {
   Assembler::getInstance().instructions().ld(args, { });
 }

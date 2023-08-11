@@ -38,4 +38,6 @@
 #define ST 0x80
 #define LD 0x90
 
+#define MAX_DISPLACEMENT 1 << 12
+
 #endif // DEFS_H_

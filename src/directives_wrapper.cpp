@@ -64,10 +64,8 @@ void _asm_label(string* arg, bool secondPass) {
 }
 
 void _asm_dir_end(bool secondPass) {
-  if (secondPass) {
-    Assembler::getInstance().directives().end();
-  }
-  else {
+  Assembler::getInstance().directives().end();
+  if (!secondPass) {
     Assembler::getInstance().sectionReset();
   }
   Assembler::getInstance().printSymbolTable();

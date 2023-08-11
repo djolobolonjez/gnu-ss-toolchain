@@ -47,7 +47,7 @@ void AssemblyDirectives::wordSymbol(string symbol) {
     relaEntry = new RelocationTableEntry(locationCounter, RELA_INFO(symbolIndex, R_X86_64_32));
   }
 
-  if (relaEntry != nullptr) {
+  if (relaEntry != nullptr && relatab->notAssigned(relaEntry)) {
     relatab->addRelocation(relaEntry);
   }
 }
@@ -184,15 +184,23 @@ void AssemblyDirectives::asciiPassTwo(string str) {
 
 void AssemblyDirectives::end() {
   SectionTable& sectiontab = SectionTable::getInstance();
-  for (int i = 0; i < sectiontab.size(); i++) {
+  if (Assembler::getInstance().isFirstPass()) {
+    for (int i = 0; i < sectiontab.size(); i++) {
+      sectiontab[i]->updateLiteralPool();
+    }
+  }
+  else {
+    for (int i = 0; i < sectiontab.size(); i++) {
       sectiontab[i]->copyLiteralPool();
     }
 
-  for (int i = 0; i < sectiontab.size(); i++) {
-  sectiontab[i]->printSection();
-  sectiontab[i]->printRelaTable();
+    for (int i = 0; i < sectiontab.size(); i++) {
+      sectiontab[i]->printSection();
+      sectiontab[i]->printRelaTable();
 
-  cout << "End of assembly file" << endl;
+      
+    }
+    cout << "End of assembly file" << endl;
   }
 
   

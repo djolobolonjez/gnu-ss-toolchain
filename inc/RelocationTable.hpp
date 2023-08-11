@@ -10,7 +10,15 @@ private:
 
 public:
   int size() const { return relatab.size(); }
-
+  
+  bool notAssigned(RelocationTableEntry* relatabEntry) { 
+    for (auto entry : relatab) {
+      if (entry->offset == relatabEntry->offset) {
+        return false;
+      }
+    }
+    return true;
+  }
   void addRelocation(RelocationTableEntry* relatabEntry) { relatab.push_back(relatabEntry); }
   RelocationTableEntry*& operator[](int index) { return relatab[index]; }
 };

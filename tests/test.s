@@ -16,6 +16,9 @@ j:
 #add %r1, %r2
 ld [%r3], %r2
 ld $50, %r2
+ld 75, %r2
+st %r1, $b
+st %r3, $75
 push %r2
 pop %r2
 .section other_section

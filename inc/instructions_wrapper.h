@@ -16,6 +16,7 @@ void _asm_instr_arithmetic(int, string*, string*);
 void _asm_instr_logical(int, string*, string*);
 void _asm_instr_shl(string*, string*);
 void _asm_instr_shr(string*, string*);
+void _asm_instr_st(InstructionArguments*);
 void _asm_instr_ld(InstructionArguments*);
 void _asm_instr_ret(InstructionArguments*);
 void _asm_instr_push(InstructionArguments*);
