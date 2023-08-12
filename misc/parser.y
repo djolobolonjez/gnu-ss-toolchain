@@ -143,11 +143,11 @@ instructions:
   | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
   | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
   | TOKEN_ST register TOKEN_COMMA operand endls { if (secondPass) { $4->args->push_back({$2, 2}); _asm_instr_st($4); } 
-      if($4->modificator == 0x8) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if($4->modificator == 0x8 || $4->modificator == 0x9) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_LD operand TOKEN_COMMA register endls { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } 
-      if ($2->modificator == 0x8) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if ($2->modificator == 0x8 || $2->modificator == 0x9) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_PUSH operand { if (secondPass) { $2->modificator=0x1; _asm_instr_push($2); } instructionFirstPass(); }
@@ -172,8 +172,16 @@ operand:
   | TOKEN_DOLLAR TOKEN_SYM { $$ = Utils::create_instruction(0x2); $$->args->push_back({$2, 0}); if (!secondPass) { literalPool($$); } }
   | TOKEN_LITERAL { $$ = Utils::create_instruction(0x8); $$->args->push_back({$1, 1}); if (!secondPass) { literalPool($$); } }
   | TOKEN_SYM { $$ = Utils::create_instruction(0x8); $$->args->push_back({$1, 0}); if (!secondPass) { literalPool($$); } } 
-  | TOKEN_LEFT_SB register TOKEN_PLUS TOKEN_LITERAL TOKEN_RIGHT_SB { }
-  | TOKEN_LEFT_SB register TOKEN_PLUS TOKEN_SYM TOKEN_RIGHT_SB { }
+  | TOKEN_LEFT_SB register TOKEN_PLUS TOKEN_LITERAL TOKEN_RIGHT_SB { 
+      $$ = Utils::create_instruction(0x9); 
+      $$->args->push_back({$2, 2}); $$->args->push_back({$4, 1});
+      if (!secondPass) { literalPool($$); }
+    }
+  | TOKEN_LEFT_SB register TOKEN_PLUS TOKEN_SYM TOKEN_RIGHT_SB { 
+      $$ = Utils::create_instruction(0x9); 
+      $$->args->push_back({$2, 2}); $$->args->push_back({$4, 0});
+      if (!secondPass) { literalPool($$); }
+    }
   ;
 
 expr:

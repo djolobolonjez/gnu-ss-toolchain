@@ -16,7 +16,8 @@ j:
 #add %r1, %r2
 ld [%r3], %r2
 ld $50, %r2
-ld 75, %r2
+ld [%r3+45], %r1
+#ld 75, %r2
 st %r1, $b
 st %r3, $75
 push %r2

@@ -31,22 +31,23 @@ void AssemblyInstructions::literalPool(InstructionArguments* instruction) {
   SectionTable& sectiontab = SectionTable::getInstance();
   Section*& currentSection = sectiontab.getCurrentSection();
 
-  string literal = *(arguments[0].value);
-  map<string, int>& literalPool = currentSection->getPool();
-  if (literalPool.find(literal) == literalPool.end()) {
-    literalPool.insert({literal, currentSection->getPoolSize()});
-    unsigned int data;
+  for (auto arg : arguments) {
+    string literal = *(arg.value);
+    map<string, int>& literalPool = currentSection->getPool();
+    if (literalPool.find(literal) == literalPool.end() && arg.type != 2) {
+      literalPool.insert({literal, currentSection->getPoolSize()});
+      unsigned int data;
 
-    if (arguments[0].type == 1) {
-      data = stoi(literal);
-    }
-    else {
-      SymbolTable& symtab = SymbolTable::getInstance();
-      data = symtab[symtab.getIndexOfEntry(literal)]->getValue();
-    }
-    Utils::addWord(currentSection, data, false, 1);
-
+      if (arg.type == 1) {
+        data = stoi(literal);
+      }
+      else {
+        SymbolTable& symtab = SymbolTable::getInstance();
+        data = symtab[symtab.getIndexOfEntry(literal)]->getValue();
+      }
+      Utils::addWord(currentSection, data, false, 1);
   }
+}
 }
 
 void AssemblyInstructions::halt() {
@@ -172,7 +173,6 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
       if (code.first == 0) {
         code.first = stoi(arguments[0].value->substr(1));
       }
-      cout << code.first << endl;
       ss << hex << setw(1) << code.first << setw(1) << code.second << setw(1) << code.third << setfill('0') << setw(3) << (code.displacement & 0xfff);
       break;
     }
@@ -249,9 +249,7 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
       code.second = (code.first == 0xd ? 0x1 : 0xd);
 
       InstructionArguments* registerBackup = Utils::create_instruction(0x1);
-      cout << code.second << endl;
       string* newRegister = new string("%" + to_string(code.second));
-      cout << *newRegister << endl;
       registerBackup->args->push_back({newRegister, 2});
       push(registerBackup);
 
@@ -281,6 +279,52 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
 
       break;
     } 
+
+    case 0x9: {
+      code.first = stoi(arguments[1].value->substr(1));
+      code.second = stoi(arguments[0].value->substr(1));
+      if (code.first != 0xd && code.second != 0xd) {
+        code.third = 0xd;
+      }
+      else {
+        if (code.first != 0x1 && code.second != 0x1) {
+          code.third = 0x1;
+        }
+        else {
+          code.third = 0x2;
+        }
+      }
+      InstructionArguments* registerBackup = Utils::create_instruction(0x1);
+      string* newRegister = new string("%" + to_string(code.third));
+      registerBackup->args->push_back({newRegister, 2});
+      push(registerBackup);
+
+      firstPass();
+      
+      registerBackup->modificator = 0x2;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({arguments[1].value, arguments[1].type});
+      registerBackup->args->push_back({newRegister, 0x2});
+      ld(registerBackup, {});
+
+      firstPass();
+
+      registerBackup->args->clear();
+      registerBackup->args->push_back({arguments[0].value, 0x2});
+      registerBackup->args->push_back({arguments[2].value, 0x2});
+      ld(registerBackup, {0, 0, code.third, 0});
+
+      firstPass();
+
+      registerBackup->modificator = 0x3;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({newRegister, 2});
+      pop(registerBackup);
+
+      return;
+      
+      break;
+    }
 
   }
 
