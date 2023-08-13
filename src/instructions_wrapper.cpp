@@ -40,6 +40,9 @@ void _asm_instr_shr(string* regOne, string* regTwo) {
 }
 
 void _asm_instr_st(InstructionArguments* args) {
+  if (args->modificator == 0x1) {
+    args->modificator = 0x3;
+  }
   Assembler::getInstance().instructions().st(args, { });
 }
 
@@ -57,4 +60,8 @@ void _asm_instr_push(InstructionArguments* args) {
 
 void _asm_instr_pop(InstructionArguments* args) {
   Assembler::getInstance().instructions().pop(args);
+}
+
+void _asm_instr_call(InstructionArguments* args) {
+  Assembler::getInstance().instructions().call(args);
 }

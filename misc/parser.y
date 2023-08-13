@@ -48,6 +48,7 @@ static bool secondPass = false;
 %type <args> expr
 %type <sval> register
 %type <instr> operand
+%type <instr> operandjmp
 
 %%
 
@@ -117,8 +118,17 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_NOT register endls { if (secondPass) { 
       _asm_instr_logical(0, $4, $4); } else { _asm_label($1, secondPass); } instructionFirstPass();
     }
+  | TOKEN_SYM TOKEN_COLON TOKEN_ST register TOKEN_COMMA operand endls {
+      if (secondPass) { $6->args->push_back({$4, 2}); _asm_instr_st($6); } 
+      else { _asm_label($1, secondPass); }
+      if(!secondPass && ($6->modificator == 0x8 || $6->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      else { instructionFirstPass(); }
+    }
   | TOKEN_SYM TOKEN_COLON TOKEN_LD operand TOKEN_COMMA register endls { 
-      if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } instructionFirstPass();
+      if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } 
+      else { _asm_label($1, secondPass); }
+      if (!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      else { instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_PUSH operand endls {
       if (secondPass) { $4->modificator = 0x1; _asm_instr_push($4); } instructionFirstPass(); 
@@ -126,7 +136,10 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_POP operand endls {
       if (secondPass) { $4->modificator = 0x3; _asm_instr_pop($4); } instructionFirstPass(); 
     }
-
+  | TOKEN_SYM TOKEN_COLON TOKEN_CALL operandjmp endls {
+      if (secondPass) { _asm_instr_call($4); } instructionFirstPass();
+    }
+  
   | TOKEN_HALT endls { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
   | TOKEN_INT endls { if (secondPass) { _asm_instr_int(); }  instructionFirstPass(); }
   | TOKEN_IRET endls { cout << "iret" << endl; }
@@ -143,15 +156,16 @@ instructions:
   | TOKEN_DIV register TOKEN_COMMA register endls { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
   | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
   | TOKEN_ST register TOKEN_COMMA operand endls { if (secondPass) { $4->args->push_back({$2, 2}); _asm_instr_st($4); } 
-      if($4->modificator == 0x8 || $4->modificator == 0x9) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if(!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_LD operand TOKEN_COMMA register endls { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } 
-      if ($2->modificator == 0x8 || $2->modificator == 0x9) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if (!secondPass && ($2->modificator == 0x8 || $2->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_PUSH operand { if (secondPass) { $2->modificator=0x1; _asm_instr_push($2); } instructionFirstPass(); }
   | TOKEN_POP operand { if (secondPass) { $2->modificator = 0x3; _asm_instr_pop($2); } instructionFirstPass(); }
+  | TOKEN_CALL operandjmp { if (secondPass) { _asm_instr_call($2); } instructionFirstPass(); }
   ;
 
 symlist:
@@ -183,6 +197,10 @@ operand:
       if (!secondPass) { literalPool($$); }
     }
   ;
+
+operandjmp:
+  TOKEN_LITERAL { $$ = Utils::create_instruction(0x1); $$->args->push_back({$1, 1}); if (!secondPass) { literalPool($$); } }
+  | TOKEN_SYM { $$ = Utils::create_instruction(0x1); $$->args->push_back({$1, 0}); if (!secondPass) { literalPool($$); } }
 
 expr:
   TOKEN_SYM { $$ = Utils::create_arguments(); $$->args->push_back({$1, 0}); }

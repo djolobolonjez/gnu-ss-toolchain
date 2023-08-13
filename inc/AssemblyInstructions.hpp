@@ -33,6 +33,7 @@ public:
   void ret(InstructionArguments*);
   void push(InstructionArguments*);
   void pop(InstructionArguments*);
+  void call(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

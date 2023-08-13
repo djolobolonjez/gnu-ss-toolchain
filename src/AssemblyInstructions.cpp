@@ -7,6 +7,7 @@
 #include "../inc/SymbolTable.hpp"
 #include "../inc/RelocationTable.hpp"
 #include "../inc/Assembler.hpp"
+#include <algorithm>
 #include <sstream>
 #include <iomanip>
 
@@ -118,22 +119,26 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
   switch (mod) {
     case 0x0: {
       code.first = stoi(arguments[1].value->substr(1));
-      code.second = stoi(arguments[0].value->substr(1));
+      code.third = stoi(arguments[0].value->substr(1));
 
       ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
       break;
     }
     case 0x2: {
-      code.first = stoi(arguments[1].value->substr(1));
+      code.third = stoi(arguments[1].value->substr(1));
       Section*& currentSection = SectionTable::getInstance().getCurrentSection();
       if (arguments[0].type == 1 || arguments[0].type == 0) {
         code.second = 15;
         
         map<string, int>& literalPool = currentSection->getPool();
-        code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter();
+        code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
+        cout << "INSTRUTCTION CHECK: " << currentSection->getLocationCounter() << endl;
         if (code.displacement >= MAX_DISPLACEMENT) {
           throw AssemblyException("Error: Maximum displacement exceeded!");
         }
+      }
+      else {
+        code.first = stoi(arguments[0].value->substr(1));
       }
 
       if (arguments[0].type == 0) {
@@ -162,11 +167,10 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
       break;
     }
     case 0x3 : {
-      if (code.first == 0) {
-        code.first = stoi(arguments[0].value->substr(1));
-      }
-      
-      ss << hex << setw(1) << code.first << code.second << code.third << setfill('0') << setw(3) << code.displacement;
+      swap(arguments[0], arguments[1]);
+      instruction->modificator = 0x1;
+      ld(instruction, {});
+      return;
       break;
     }
     case 0x1: {
@@ -176,6 +180,89 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
       ss << hex << setw(1) << code.first << setw(1) << code.second << setw(1) << code.third << setfill('0') << setw(3) << (code.displacement & 0xfff);
       break;
     }
+    case 0x8: {
+      code.third = stoi(arguments[1].value->substr(1));
+      code.first = (code.third == 0xd ? 0x1 : 0xd);
+
+      InstructionArguments* registerBackup = Utils::create_instruction(0x1);
+      string* newRegister = new string("%" + to_string(code.first));
+      registerBackup->args->push_back({newRegister, 2});
+      push(registerBackup);
+
+      firstPass();
+      
+      registerBackup->modificator = 0x2;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({arguments[0].value, arguments[0].type});
+      registerBackup->args->push_back({newRegister, 0x2});
+      ld(registerBackup, {});
+
+      firstPass();
+
+      registerBackup->args->clear();
+      registerBackup->args->push_back({newRegister, 0x2});
+      registerBackup->args->push_back({arguments[1].value, 0x2});
+      st(registerBackup, {});
+
+      firstPass();
+
+      registerBackup->modificator = 0x3;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({newRegister, 2});
+      pop(registerBackup);
+
+      return;
+
+      break;
+    } 
+
+    case 0x9: {
+      code.third = stoi(arguments[2].value->substr(1));
+      code.first = stoi(arguments[0].value->substr(1));
+      cout << "OK" << endl;
+      if (code.third != 0xd && code.first != 0xd) {
+        code.second = 0xd;
+      }
+      else {
+        if (code.first != 0x1 && code.third != 0x1) {
+          code.second = 0x1;
+        }
+        else {
+          code.second = 0x2;
+        }
+      }
+      InstructionArguments* registerBackup = Utils::create_instruction(0x1);
+      string* newRegister = new string("%" + to_string(code.second));
+      registerBackup->args->push_back({newRegister, 2});
+      push(registerBackup);
+
+      firstPass();
+      
+      registerBackup->modificator = 0x2;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({arguments[1].value, arguments[1].type});
+      registerBackup->args->push_back({newRegister, 0x2});
+      ld(registerBackup, {});
+
+      firstPass();
+
+      registerBackup->args->clear();
+      registerBackup->args->push_back({arguments[0].value, 0x2});
+      registerBackup->args->push_back({arguments[2].value, 0x2});
+      st(registerBackup, {0, code.second, 0, 0});
+
+      firstPass();
+
+      registerBackup->modificator = 0x3;
+      registerBackup->args->clear();
+      registerBackup->args->push_back({newRegister, 2});
+      pop(registerBackup);
+
+      return;
+      
+      break;
+    }
+
   }
   Utils::toBytesHex(ss, true);
 }
@@ -183,7 +270,7 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
 void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
   ArgVector arguments = *(instruction->args);
   int mod = instruction->modificator;
-
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
   stringstream ss;
   ss << hex << setw(1) << (LD | mod);
 
@@ -197,12 +284,12 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
     }
     case 0x2: {
       code.first = stoi(arguments[1].value->substr(1));
-      Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+      
       if (arguments[0].type == 1 || arguments[0].type == 0) {
         code.second = 0xf;
         
         map<string, int>& literalPool = currentSection->getPool();
-        code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter();
+        code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
         if (code.displacement > MAX_DISPLACEMENT) {
           throw AssemblyException("Error: Maximum displacement exceeded!");
         }
@@ -275,13 +362,14 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
       registerBackup->args->push_back({newRegister, 2});
       pop(registerBackup);
 
+
       return;
 
       break;
     } 
 
     case 0x9: {
-      code.first = stoi(arguments[1].value->substr(1));
+      code.first = stoi(arguments[2].value->substr(1));
       code.second = stoi(arguments[0].value->substr(1));
       if (code.first != 0xd && code.second != 0xd) {
         code.third = 0xd;
@@ -341,4 +429,47 @@ void AssemblyInstructions::push(InstructionArguments* instruction) {
 
 void AssemblyInstructions::pop(InstructionArguments* instruction) {
   ld(instruction, {0, 14, 0, 4});
+}
+
+void AssemblyInstructions::call(InstructionArguments* instruction) {
+  ArgVector arguments = *(instruction->args);
+  int mod = instruction->modificator;
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+  
+  stringstream ss;
+  ss << hex << setw(1) << (CALL | mod);
+
+  int displacement = 0;
+        
+  map<string, int>& literalPool = currentSection->getPool();
+  displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
+  if (displacement > MAX_DISPLACEMENT) {
+    throw AssemblyException("Error: Maximum displacement exceeded!");
+  }
+
+  if (arguments[0].type == 0) {
+    RelocationTable*& relatab = currentSection->getRelaLink();
+    int locationCounter = currentSection->getLocationCounter();
+    RelocationTableEntry* relaEntry = nullptr;
+
+    SymbolTable& symtab = SymbolTable::getInstance();
+    int symbolIndex = symtab.getIndexOfEntry(*(arguments[0].value));
+    SymbolTableEntry*& stEntry = symtab[symbolIndex];
+
+    if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
+      relaEntry = new RelocationTableEntry(
+        locationCounter + displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), stEntry->getValue()
+      );
+    }
+    else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
+      relaEntry = new RelocationTableEntry(locationCounter + displacement, RELA_INFO(symbolIndex, R_X86_64_32));
+    }
+
+    if (relaEntry != nullptr) {
+      relatab->addRelocation(relaEntry);
+    }
+  }
+
+  ss << hex << setw(1) << 0xf << 0x0 << 0x0 << setfill('0') << setw(3) << displacement;
+  Utils::toBytesHex(ss, true);
 }

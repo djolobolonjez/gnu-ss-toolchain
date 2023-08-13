@@ -37,6 +37,7 @@
 #define SHR 0x71
 #define ST 0x80
 #define LD 0x90
+#define CALL 0x20
 
 #define MAX_DISPLACEMENT 1 << 12
 

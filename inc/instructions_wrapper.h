@@ -21,5 +21,6 @@ void _asm_instr_ld(InstructionArguments*);
 void _asm_instr_ret(InstructionArguments*);
 void _asm_instr_push(InstructionArguments*);
 void _asm_instr_pop(InstructionArguments*);
+void _asm_instr_call(InstructionArguments*);
 
 #endif // INSTRUCTIONS_WRAPPER_H_

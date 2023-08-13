@@ -17,9 +17,12 @@ j:
 ld [%r3], %r2
 ld $50, %r2
 ld [%r3+45], %r1
-#ld 75, %r2
+x: ld 75, %r2
+y: st %r1, [%r3]
+call c
+#st %r1, b
 st %r1, $b
-st %r3, $75
+st %r3, [%r4+75]
 push %r2
 pop %r2
 .section other_section
