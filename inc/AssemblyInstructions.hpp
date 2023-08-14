@@ -18,7 +18,7 @@ private:
 
 public:
   static AssemblyInstructions& getInstance();
-  void firstPass();
+  void firstPass(InstructionArguments* label = nullptr);
   void literalPool(InstructionArguments*);
 
   void halt();
@@ -34,6 +34,7 @@ public:
   void push(InstructionArguments*);
   void pop(InstructionArguments*);
   void call(InstructionArguments*);
+  void jmp(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

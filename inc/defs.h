@@ -38,6 +38,7 @@
 #define ST 0x80
 #define LD 0x90
 #define CALL 0x20
+#define JMP 0x30
 
 #define MAX_DISPLACEMENT 1 << 12
 

@@ -7,8 +7,8 @@ void literalPool(InstructionArguments* instruction) {
   Assembler::getInstance().instructions().literalPool(instruction);
 }
 
-void instructionFirstPass() {
-  Assembler::getInstance().instructions().firstPass();
+void instructionFirstPass(InstructionArguments* instruction) {
+  Assembler::getInstance().instructions().firstPass(instruction);
 }
 
 void _asm_instr_halt() {
@@ -64,4 +64,8 @@ void _asm_instr_pop(InstructionArguments* args) {
 
 void _asm_instr_call(InstructionArguments* args) {
   Assembler::getInstance().instructions().call(args);
+}
+
+void _asm_instr_jmp(InstructionArguments* args) {
+  Assembler::getInstance().instructions().jmp(args);
 }

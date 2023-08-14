@@ -6,7 +6,7 @@ using namespace std;
 struct AssemblyLineArguments;
 struct InstructionArguments;
 
-void instructionFirstPass();
+void instructionFirstPass(InstructionArguments* instruction = nullptr);
 void literalPool(InstructionArguments*);
 
 void _asm_instr_halt();
@@ -22,5 +22,6 @@ void _asm_instr_ret(InstructionArguments*);
 void _asm_instr_push(InstructionArguments*);
 void _asm_instr_pop(InstructionArguments*);
 void _asm_instr_call(InstructionArguments*);
+void _asm_instr_jmp(InstructionArguments*);
 
 #endif // INSTRUCTIONS_WRAPPER_H_

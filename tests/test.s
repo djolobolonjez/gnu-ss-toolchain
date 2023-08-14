@@ -13,21 +13,24 @@ j:
 
 #div %r11, %r13
 #not %r2
-#add %r1, %r2
+x:add %r1, %r2
+jmp x
 ld [%r3], %r2
 ld $50, %r2
+jmp 0x4c
 ld [%r3+45], %r1
-x: ld 75, %r2
+ld 75, %r2
 y: st %r1, [%r3]
 call c
 #st %r1, b
 st %r1, $b
 st %r3, [%r4+75]
 push %r2
+
 pop %r2
 .section other_section
 .word 8, i
 ret
 c: .extern h
-#halt
+halt
 i: .end

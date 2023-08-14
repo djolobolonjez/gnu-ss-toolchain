@@ -16,11 +16,19 @@ AssemblyInstructions& AssemblyInstructions::getInstance() {
   return instance;
 }
 
-void AssemblyInstructions::firstPass() {
+void AssemblyInstructions::firstPass(InstructionArguments* instruction) {
   SectionTable& sectiontab = SectionTable::getInstance();
   Section*& currentSection = sectiontab.getCurrentSection();
+  SymbolTable& symtab = SymbolTable::getInstance();
   if (currentSection == nullptr) {
     throw AssemblyException("Error: Instruction has to be defined inside section!");
+  }
+
+  if (instruction != nullptr) {
+    ArgVector arguments = *(instruction->args);
+    if (arguments[0].type == 0 && !symtab.foundEntryByName(*(arguments[0].value))) {
+      symtab.addSymbol(*(arguments[0].value), 0, ST_INFO(STBIND_LOCAL, STTYPE_NOTYPE), currentSection->getId(), 0);
+    }
   }
   
   currentSection->incrementLocationCounter(WORD_SIZE);
@@ -40,7 +48,14 @@ void AssemblyInstructions::literalPool(InstructionArguments* instruction) {
       unsigned int data;
 
       if (arg.type == 1) {
-        data = stoi(literal);
+        int base;
+        if (arg.value->substr(0, 2) == "0x") {
+          base = 16;
+        }
+        else {
+          base = (arg.value->substr(0, 1) == "0" && arg.value->length() != 1 ? 8 : 10);
+        }
+        data = stoi(literal, nullptr, base);
       }
       else {
         SymbolTable& symtab = SymbolTable::getInstance();
@@ -438,6 +453,49 @@ void AssemblyInstructions::call(InstructionArguments* instruction) {
   
   stringstream ss;
   ss << hex << setw(1) << (CALL | mod);
+
+  int displacement = 0;
+        
+  map<string, int>& literalPool = currentSection->getPool();
+  displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
+  if (displacement > MAX_DISPLACEMENT) {
+    throw AssemblyException("Error: Maximum displacement exceeded!");
+  }
+
+  if (arguments[0].type == 0) {
+    RelocationTable*& relatab = currentSection->getRelaLink();
+    int locationCounter = currentSection->getLocationCounter();
+    RelocationTableEntry* relaEntry = nullptr;
+
+    SymbolTable& symtab = SymbolTable::getInstance();
+    int symbolIndex = symtab.getIndexOfEntry(*(arguments[0].value));
+    SymbolTableEntry*& stEntry = symtab[symbolIndex];
+
+    if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
+      relaEntry = new RelocationTableEntry(
+        locationCounter + displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), stEntry->getValue()
+      );
+    }
+    else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
+      relaEntry = new RelocationTableEntry(locationCounter + displacement, RELA_INFO(symbolIndex, R_X86_64_32));
+    }
+
+    if (relaEntry != nullptr) {
+      relatab->addRelocation(relaEntry);
+    }
+  }
+
+  ss << hex << setw(1) << 0xf << 0x0 << 0x0 << setfill('0') << setw(3) << displacement;
+  Utils::toBytesHex(ss, true);
+}
+
+void AssemblyInstructions::jmp(InstructionArguments* instruction) {
+  ArgVector arguments = *(instruction->args);
+  int mod = instruction->modificator;
+  Section*& currentSection = SectionTable::getInstance().getCurrentSection();
+  
+  stringstream ss;
+  ss << hex << setw(1) << (JMP | mod);
 
   int displacement = 0;
         
