@@ -11,6 +11,7 @@ void literalPool(InstructionArguments*);
 
 void _asm_instr_halt();
 void _asm_instr_int();
+void _asm_instr_iret();
 void _asm_instr_xchg(string*, string*);
 void _asm_instr_arithmetic(int, string*, string*);
 void _asm_instr_logical(int, string*, string*);
@@ -23,5 +24,6 @@ void _asm_instr_push(InstructionArguments*);
 void _asm_instr_pop(InstructionArguments*);
 void _asm_instr_call(InstructionArguments*);
 void _asm_instr_jmp(InstructionArguments*);
+void _asm_instr_csrrd(InstructionArguments*);
 
 #endif // INSTRUCTIONS_WRAPPER_H_

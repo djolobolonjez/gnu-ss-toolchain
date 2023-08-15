@@ -60,6 +60,7 @@ st { return TOKEN_ST; }
 csrrd { return TOKEN_CSRRD; }
 csrwr { return TOKEN_CSRWR; }
 (([rR]([0-9]|1[0-5]))|([sS][pP])|([pP][cC])) { yylval.sval = new string(yytext); return TOKEN_GPR; }
+((status)|(handler)|(cause)) { yylval.sval = new string(yytext); return TOKEN_CSR; }
 (([1-9][0-9]*)|(0x[0-9a-fA-F]+)|(0[0-7]+)) { yylval.sval = new string(yytext); return TOKEN_LITERAL; }
 \".*\" { yylval.sval = new string(yytext); return TOKEN_STRING; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = new string(yytext); return TOKEN_SYM; }

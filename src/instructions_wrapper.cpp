@@ -19,6 +19,10 @@ void _asm_instr_int() {
   Assembler::getInstance().instructions().interrupt();
 }
 
+void _asm_instr_iret() {
+  Assembler::getInstance().instructions().iret();
+}
+
 void _asm_instr_xchg(string* regOne, string* regTwo) {
   Assembler::getInstance().instructions().xchg(*regOne, *regTwo);
 }
@@ -68,4 +72,8 @@ void _asm_instr_call(InstructionArguments* args) {
 
 void _asm_instr_jmp(InstructionArguments* args) {
   Assembler::getInstance().instructions().jmp(args);
+}
+
+void _asm_instr_csrrd(InstructionArguments* args) {
+  Assembler::getInstance().instructions().csrrd(args);
 }

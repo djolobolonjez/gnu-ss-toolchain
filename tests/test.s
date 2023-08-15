@@ -14,7 +14,7 @@ j:
 #div %r11, %r13
 #not %r2
 x:add %r1, %r2
-jmp x
+beq %r1, %r2, x
 ld [%r3], %r2
 ld $50, %r2
 jmp 0x4c
@@ -31,6 +31,8 @@ pop %r2
 .section other_section
 .word 8, i
 ret
+csrrd %status, %r13
 c: .extern h
+iret
 halt
 i: .end

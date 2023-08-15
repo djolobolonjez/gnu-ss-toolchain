@@ -74,6 +74,19 @@ void AssemblyInstructions::interrupt() {
   Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT, true);
 }
 
+void AssemblyInstructions::iret() {
+  stringstream ss;
+  ss << hex << setw(1) << (LD | 0x6);
+  ss << hex << setw(1) << 0x0 << 0xe << 0x0 << setfill('0') << setw(3) << 0x4;
+  Utils::toBytesHex(ss, true);
+
+  ss.str("");
+  ss.clear();
+  ss << hex << setw(1) << (LD | 0x3);
+  ss << hex << setw(1) << 0xf << 0xe << 0x0 << setfill('0') << setw(3) << 0x8;
+  Utils::toBytesHex(ss, true);
+}
+
 void AssemblyInstructions::xchg(string regOne, string regTwo) {
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   stringstream ss;
@@ -497,15 +510,23 @@ void AssemblyInstructions::jmp(InstructionArguments* instruction) {
   stringstream ss;
   ss << hex << setw(1) << (JMP | mod);
 
+  int first = 0xf, second = 0x0, third = 0x0;
+  if (arguments.size() > 1) {
+    second = stoi(arguments[1].value->substr(1));
+    third = stoi(arguments[2].value->substr(1));
+  }
+
   int displacement = 0;
-        
+  int type = arguments[0].type;
+  string literal = *(arguments[0].value);
+
   map<string, int>& literalPool = currentSection->getPool();
-  displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
+  displacement = literalPool[literal] - currentSection->getLocationCounter() - 4;
   if (displacement > MAX_DISPLACEMENT) {
     throw AssemblyException("Error: Maximum displacement exceeded!");
   }
 
-  if (arguments[0].type == 0) {
+  if (type == 0) {
     RelocationTable*& relatab = currentSection->getRelaLink();
     int locationCounter = currentSection->getLocationCounter();
     RelocationTableEntry* relaEntry = nullptr;
@@ -528,6 +549,27 @@ void AssemblyInstructions::jmp(InstructionArguments* instruction) {
     }
   }
 
-  ss << hex << setw(1) << 0xf << 0x0 << 0x0 << setfill('0') << setw(3) << displacement;
+  ss << hex << setw(1) << first << second << third << setfill('0') << setw(3) << displacement;
+  Utils::toBytesHex(ss, true);
+}
+
+void AssemblyInstructions::csrrd(InstructionArguments* instruction) {
+  ArgVector arguments = *(instruction->args);
+  int mod = instruction->modificator;
+  int first = stoi(arguments[1].value->substr(1));
+  int second = 0;
+
+  string csr = *(arguments[0].value);
+  if (csr == "handler") {
+    second = 1;
+  }
+  else if (csr == "cause") {
+    second = 2;
+  }
+
+  stringstream ss;
+  ss << hex << setw(1) << (LD | mod);
+  ss << hex << setw(1) << first << second << 0x0 << setfill('0') << setw(3) << 0x0;
+
   Utils::toBytesHex(ss, true);
 }

@@ -23,6 +23,7 @@ public:
 
   void halt();
   void interrupt();
+  void iret();
   void xchg(string, string);
   void arithmetic(int, string, string);
   void logical(int, string, string);
@@ -35,6 +36,7 @@ public:
   void pop(InstructionArguments*);
   void call(InstructionArguments*);
   void jmp(InstructionArguments*);
+  void csrrd(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

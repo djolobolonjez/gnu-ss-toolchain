@@ -43,6 +43,7 @@ static bool secondPass = false;
 %token <sval> TOKEN_LITERAL
 %token <sval> TOKEN_STRING
 %token <sval> TOKEN_GPR
+%token <sval> TOKEN_CSR
 
 %type <args> symlist
 %type <args> expr
@@ -92,7 +93,9 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_INT { if (secondPass) { _asm_instr_int(); } else { _asm_label($1, secondPass); }
     instructionFirstPass();
    }
-  | TOKEN_SYM TOKEN_COLON TOKEN_IRET { cout << "iret instruction" << endl; }
+  | TOKEN_SYM TOKEN_COLON TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } else { _asm_label($1, secondPass); }
+      instructionFirstPass();
+    }
   | TOKEN_SYM TOKEN_COLON TOKEN_RET { 
       if (secondPass) { 
         InstructionArguments* args = Utils::create_instruction(0x3); _asm_instr_ret(args); 
@@ -121,13 +124,13 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_ST register TOKEN_COMMA operand {
       if (secondPass) { $6->args->push_back({$4, 2}); _asm_instr_st($6); } 
       else { _asm_label($1, secondPass); }
-      if(!secondPass && ($6->modificator == 0x8 || $6->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if(!secondPass && ($6->modificator == 0x8 || $6->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($6); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_LD operand TOKEN_COMMA register { 
       if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } 
       else { _asm_label($1, secondPass); }
-      if (!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass(); } }
+      if (!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($4); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_PUSH operand {
@@ -137,15 +140,48 @@ instructions:
       if (secondPass) { $4->modificator = 0x3; _asm_instr_pop($4); } else { _asm_label($1, secondPass); } instructionFirstPass(); 
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_CALL operandjmp {
-      if (secondPass) { _asm_instr_call($4); } else { _asm_label($1, secondPass); } instructionFirstPass();
+      if (secondPass) { _asm_instr_call($4); } else { _asm_label($1, secondPass); } instructionFirstPass($4);
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_JMP operandjmp {
-      if (secondPass) { _asm_instr_jmp($4); } else { _asm_label($1, secondPass); }instructionFirstPass();
+      $4->modificator = 0x8;
+      if (secondPass) { _asm_instr_jmp($4); } else { _asm_label($1, secondPass); }instructionFirstPass($4);
     }
+  | TOKEN_SYM TOKEN_COLON TOKEN_BEQ TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $10->args->push_back({$5, 2});
+      $10->args->push_back({$8, 2}); 
+      $10->modificator = 0x9;
+      if (secondPass) { _asm_instr_jmp($10); }
+      else { _asm_label($1, secondPass); }
+      instructionFirstPass($10);
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_BGT TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $10->args->push_back({$5, 2});
+      $10->args->push_back({$8, 2});
+      $10->modificator = 0xb; 
+      if (secondPass) { _asm_instr_jmp($10); }
+      else { _asm_label($1, secondPass); }
+      instructionFirstPass($10);
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_BNE TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $10->args->push_back({$5, 2});
+      $10->args->push_back({$8, 2}); 
+      $10->modificator = 0xa;
+      if (secondPass) { _asm_instr_jmp($10); }
+      else { _asm_label($1, secondPass); }
+      instructionFirstPass($10);
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_CSRRD TOKEN_PERCENT TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
+      InstructionArguments* instruction = Utils::create_instruction(0x0);
+      instruction->args->push_back({$5, 2});
+      instruction->args->push_back({$8, 2});  
+      if (secondPass) { _asm_instr_csrrd(instruction); } else { _asm_label($1, secondPass); }
+      instructionFirstPass(); 
+    }
+  | TOKEN_SYM TOKEN_COLON TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_CSR { }
   
   | TOKEN_HALT { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
   | TOKEN_INT { if (secondPass) { _asm_instr_int(); }  instructionFirstPass(); }
-  | TOKEN_IRET { cout << "iret" << endl; }
+  | TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } instructionFirstPass(); }
   | TOKEN_RET { 
       if (secondPass) { 
         InstructionArguments* args = Utils::create_instruction(0x3); _asm_instr_ret(args); 
@@ -169,7 +205,36 @@ instructions:
   | TOKEN_PUSH operand { if (secondPass) { $2->modificator=0x1; _asm_instr_push($2); } instructionFirstPass(); }
   | TOKEN_POP operand { if (secondPass) { $2->modificator = 0x3; _asm_instr_pop($2); } instructionFirstPass(); }
   | TOKEN_CALL operandjmp { if (secondPass) { _asm_instr_call($2); } instructionFirstPass($2); }
-  | TOKEN_JMP operandjmp { if (secondPass) {_asm_instr_jmp($2); } instructionFirstPass($2); }
+  | TOKEN_JMP operandjmp { $2->modificator = 0x8; if (secondPass) {_asm_instr_jmp($2); } instructionFirstPass($2); }
+  | TOKEN_BEQ TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $8->args->push_back({$3, 2});
+      $8->args->push_back({$6, 2}); 
+      $8->modificator = 0x9;
+      if (secondPass) { _asm_instr_jmp($8); }
+      instructionFirstPass($8);
+    }
+  | TOKEN_BGT TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $8->args->push_back({$3, 2});
+      $8->args->push_back({$6, 2});
+      $8->modificator = 0xb; 
+      if (secondPass) { _asm_instr_jmp($8); }
+      instructionFirstPass($8);
+    }
+  | TOKEN_BNE TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA operandjmp { 
+      $8->args->push_back({$3, 2});
+      $8->args->push_back({$6, 2}); 
+      $8->modificator = 0xa;
+      if (secondPass) { _asm_instr_jmp($8); }
+      instructionFirstPass($8);
+    }
+  | TOKEN_CSRRD TOKEN_PERCENT TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
+      InstructionArguments* instruction = Utils::create_instruction(0x0);
+      instruction->args->push_back({$3, 2});
+      instruction->args->push_back({$6, 2});  
+      if (secondPass) { _asm_instr_csrrd(instruction); }
+      instructionFirstPass(); 
+    }
+  | TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_CSR { }
   ;
 
 symlist:
