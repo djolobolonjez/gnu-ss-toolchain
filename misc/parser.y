@@ -1,8 +1,11 @@
 %code requires{
 #include <cstdio>
+#include <string>
+#include <cstring>
 #include "inc/utils.hpp"
 #include "inc/directives_wrapper.h"
 #include "inc/instructions_wrapper.h"
+#include "inc/Assembler.hpp"
 
 extern int yylex();
 extern int yyparse();
@@ -302,13 +305,34 @@ endls:
 
 %%
 
+
 int main(int argc, char** argv) {
-  FILE* fp = fopen("tests/test.s", "r");
+  string filename, out, in;
+  if (argc == 2) {
+    in = argv[1];
+    out = argv[1];
+    size_t index = out.find(".");
+    filename = out.substr(0, index) + ".o";
+  }
+  else if (argc == 4 && !strcmp(argv[1], "-o")) {
+    out = argv[2];
+    in = argv[3];
+    filename = out;
+  }
+  else {
+    cerr << "Invalid option! Usage: ./asembler [-o] [output] input" << endl;
+    return -1;
+  }
+  
+  string inputFile = "tests/" + in;
+  FILE* fp = fopen(inputFile.c_str(), "r");
   
   if (!fp) {
     cout << "File not found!" << endl;
     return -1;
   }
+
+  Assembler::getInstance().setFileName(filename);
 
   yyin = fp;
 

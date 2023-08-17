@@ -8,6 +8,7 @@
 #include "../inc/RelocationTable.hpp"
 #include "../inc/Assembler.hpp"
 #include <iomanip>
+#include <fstream>
 
 AssemblyDirectives& AssemblyDirectives::getInstance() {
   static AssemblyDirectives instance;
@@ -193,6 +194,20 @@ void AssemblyDirectives::end() {
     for (int i = 0; i < sectiontab.size(); i++) {
       sectiontab[i]->copyLiteralPool();
     }
+
+    ofstream output(Assembler::getInstance().getFileName(), ios::binary);
+    if (!output) {
+      cerr << "Error opening output file!" << endl;
+      return;
+    }
+      
+    for (int i = 0; i < sectiontab.size(); i++) {
+      Assembler::getInstance().dumpSectionData(sectiontab[i], output);
+    }
+
+    Assembler::getInstance().dumpSymbolTable(output);
+
+    output.close();
 
     for (int i = 0; i < sectiontab.size(); i++) {
       sectiontab[i]->printSection();

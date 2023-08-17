@@ -2,7 +2,7 @@
 #define DEFS_H_
 
 #define ST_INFO(bind, type) (((bind) << 4) + ((type) & 0xf))
-#define ST_BIND(val) ((unsigned char)(val >> 4))
+#define ST_BIND(val) (val >> 4)
 #define ST_TYPE(val) ((val) & 0xf)
 
 #define STBIND_LOCAL 0

@@ -6,7 +6,10 @@
 #include "../inc/Section.hpp"
 #include "../inc/defs.h"
 #include "../inc/AssemblyException.hpp"
+#include "../inc/RelocationTable.hpp"
+#include "../inc/types.h"
 #include <iomanip>
+#include <fstream>
 
 Assembler& Assembler::getInstance() {
   static Assembler instance;
@@ -60,6 +63,38 @@ void Assembler::sectionReset() {
     sectiontab[i]->resetLocationCounter();
   }
   secondPass();
+}
+
+void Assembler::dumpSectionData(Section*& section, ofstream& buff) {
+  buff << "---\n" << section->getName() << endl;
+  vector<char>& data = section->getContent();
+  int counter = 0;
+  for (auto const byte : data) {
+    buff << setw(2) << setfill('0') << hex << static_cast<int>(static_cast<unsigned char>(byte)) << " ";
+    if (++counter == 8) {
+      counter %= 8;
+      buff << '\n';
+    }
+  }
+  RelocationTable& relatable = *(section->getRelaLink());
+  buff << ".rela." << section->getName() << endl;
+  for (int i = 0; i < relatable.size(); i++) {
+    buff << "--";
+    buff << relatable[i]->offset << " " << RELA_TYPE(relatable[i]->info) << " ";
+    buff << RELA_SYM(relatable[i]->info) << " " << relatable[i]->addend << "\n";
+  }
+}
+
+void Assembler::dumpSymbolTable(ofstream& buff) {
+  SymbolTable& symtab = SymbolTable::getInstance();
+  buff << "\n#.symtab" << "\n";
+  for (int i = 0; i < symtab.size(); i++) {
+    SymbolTableEntry*& entry = symtab[i];
+    buff << "--";
+    buff << hex << i << " " << entry->value << " " << entry->size << " " << ST_TYPE(entry->info) << " " << 
+    ST_BIND(entry->info) << " " << entry->index << " ";
+    buff << entry->name << "\n"; 
+  }
 }
 
 void Assembler::printSymbolTable() {

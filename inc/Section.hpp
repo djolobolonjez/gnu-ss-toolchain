@@ -33,6 +33,7 @@ public:
   int getId() const { return id; }
   int getLocationCounter() const { return locationCounter; }
   int getSize() const { return size; }
+  vector<char>& getContent() { return content; }
 
   void incrementLocationCounter(int value) { locationCounter += value; }
   void incrementSize(int value) { size += value; }
