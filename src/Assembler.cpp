@@ -65,6 +65,15 @@ void Assembler::sectionReset() {
   secondPass();
 }
 
+void Assembler::dumpSectionHeaders(ofstream& buff) {
+  SectionTable& sectiontab = SectionTable::getInstance();
+  buff << "#shdr\n";
+  for (int i = 0; i < sectiontab.size(); i++) {
+    buff << sectiontab[i]->getName() << " " << sectiontab[i]->getSize() << " " << sectiontab[i]->getId() << "\n";
+  }
+  buff << "#" << endl; 
+}
+
 void Assembler::dumpSectionData(Section*& section, ofstream& buff) {
   buff << "---\n" << section->getName() << endl;
   vector<char>& data = section->getContent();
@@ -76,6 +85,10 @@ void Assembler::dumpSectionData(Section*& section, ofstream& buff) {
       buff << '\n';
     }
   }
+  if (counter % 4 == 0) {
+    buff << "\n";
+  }
+  buff << "#\n";
   RelocationTable& relatable = *(section->getRelaLink());
   buff << ".rela." << section->getName() << endl;
   for (int i = 0; i < relatable.size(); i++) {
@@ -83,6 +96,7 @@ void Assembler::dumpSectionData(Section*& section, ofstream& buff) {
     buff << relatable[i]->offset << " " << RELA_TYPE(relatable[i]->info) << " ";
     buff << RELA_SYM(relatable[i]->info) << " " << relatable[i]->addend << "\n";
   }
+  buff << "#\n";
 }
 
 void Assembler::dumpSymbolTable(ofstream& buff) {
@@ -91,10 +105,11 @@ void Assembler::dumpSymbolTable(ofstream& buff) {
   for (int i = 0; i < symtab.size(); i++) {
     SymbolTableEntry*& entry = symtab[i];
     buff << "--";
-    buff << hex << i << " " << entry->value << " " << entry->size << " " << ST_TYPE(entry->info) << " " << 
+    buff << hex << i << " " << entry->value << " " << ST_TYPE(entry->info) << " " << 
     ST_BIND(entry->info) << " " << entry->index << " ";
     buff << entry->name << "\n"; 
   }
+  buff << "#";
 }
 
 void Assembler::printSymbolTable() {

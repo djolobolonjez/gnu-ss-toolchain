@@ -20,6 +20,7 @@ public:
   AssemblyDirectives& directives(); 
   AssemblyInstructions& instructions();
 
+  void dumpSectionHeaders(ofstream&);
   void dumpSectionData(Section*&, ofstream&);
   void dumpSymbolTable(ofstream&);
   void setFileName(string filename) { this->filename = filename; }

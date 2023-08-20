@@ -17,10 +17,10 @@ x:add %r1, %r2
 beq %r1, %r2, x
 ld [%r3], %r2
 ld $50, %r2
-jmp 0x4c
+jmp y
 ld [%r3+45], %r1
 ld 75, %r2
-y: st %r1, [%r3]
+st %r1, [%r3]
 call c
 #st %r1, b
 st %r1, $b

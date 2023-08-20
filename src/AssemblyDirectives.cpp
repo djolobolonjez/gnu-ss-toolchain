@@ -200,6 +200,8 @@ void AssemblyDirectives::end() {
       cerr << "Error opening output file!" << endl;
       return;
     }
+
+    Assembler::getInstance().dumpSectionHeaders(output);
       
     for (int i = 0; i < sectiontab.size(); i++) {
       Assembler::getInstance().dumpSectionData(sectiontab[i], output);

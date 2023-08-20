@@ -32,7 +32,7 @@ public:
   string getName() const { return name; }
   int getId() const { return id; }
   int getLocationCounter() const { return locationCounter; }
-  int getSize() const { return size; }
+  int getSize() const { return content.size(); }
   vector<char>& getContent() { return content; }
 
   void incrementLocationCounter(int value) { locationCounter += value; }

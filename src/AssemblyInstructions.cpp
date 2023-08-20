@@ -23,9 +23,11 @@ void AssemblyInstructions::firstPass(InstructionArguments* instruction) {
   if (currentSection == nullptr) {
     throw AssemblyException("Error: Instruction has to be defined inside section!");
   }
-
+ 
   if (instruction != nullptr) {
     ArgVector arguments = *(instruction->args);
+    if (symtab.foundEntryByName("y")) {
+    }
     if (arguments[0].type == 0 && !symtab.foundEntryByName(*(arguments[0].value))) {
       symtab.addSymbol(*(arguments[0].value), 0, ST_INFO(STBIND_LOCAL, STTYPE_NOTYPE), currentSection->getId(), 0);
     }
@@ -59,6 +61,10 @@ void AssemblyInstructions::literalPool(InstructionArguments* instruction) {
       }
       else {
         SymbolTable& symtab = SymbolTable::getInstance();
+        if (!symtab.foundEntryByName(literal)) {
+          symtab.addSymbol(literal, 0, ST_INFO(STBIND_EXTERN, STTYPE_NOTYPE), UND, 0);
+        }
+        
         data = symtab[symtab.getIndexOfEntry(literal)]->getValue();
       }
       Utils::addWord(currentSection, data, false, 1);
@@ -160,7 +166,6 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
         
         map<string, int>& literalPool = currentSection->getPool();
         code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
-        cout << "INSTRUTCTION CHECK: " << currentSection->getLocationCounter() << endl;
         if (code.displacement >= MAX_DISPLACEMENT) {
           throw AssemblyException("Error: Maximum displacement exceeded!");
         }
