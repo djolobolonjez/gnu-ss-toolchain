@@ -2,7 +2,7 @@
 .global d
 .section my_section
 a: .global e
-.extern f
+.global f
 .skip 4
 b: .word b, 16
 d: .skip 8
@@ -33,6 +33,6 @@ pop %r2
 ret
 csrrd %status, %r13
 c: .extern h
-iret
+f:iret
 halt
 i: .end

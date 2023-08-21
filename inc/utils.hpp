@@ -17,6 +17,7 @@ namespace Utils {
   int findBase(string value);
   void addWord(Section*& section, unsigned data, bool endianness, int container = 0);
   void toBytesHex(stringstream& ss, bool endianness);
+  void editContent(vector<char>& content, unsigned data, bool endianness, int offset);
 }
 
 #endif // UTILS_H_

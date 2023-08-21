@@ -64,11 +64,13 @@ struct SymbolTableEntry {
     ulong offset;
     ulong info;
     int addend;
+    string type;
 
-    RelocationTableEntry(ulong _offset, ulong _info, int _addend = 0) {
+    RelocationTableEntry(ulong _offset, ulong _info, string _type, int _addend = 0) {
       offset = _offset;
       info = _info;
       addend = _addend;
+      type = _type;
     } 
   };
 

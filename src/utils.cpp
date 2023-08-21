@@ -24,6 +24,22 @@ namespace Utils {
     return base;
   }
 
+  void editContent(vector<char>& content, unsigned data, bool endianness, int dataOffset) {
+    if (endianness) {
+      int offset = 24;
+      for (int i = 0; i < WORD_SIZE; i++) {
+        content[dataOffset + i] = (data >> offset) & 0xff;
+        offset -= (2 * WORD_SIZE);
+      }
+    }
+    else {
+      for (int i = 0; i < WORD_SIZE; i++) {
+        content[dataOffset + i] = BYTEMASK(data);
+        data >>= 8;
+      }
+    }
+  }
+
   void addWord(Section*& section, unsigned data, bool endianness, int container) {
     if (endianness) {
       int offset = 24;

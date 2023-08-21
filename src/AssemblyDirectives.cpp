@@ -40,12 +40,12 @@ void AssemblyDirectives::wordSymbol(string symbol) {
   if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
     Utils::addWord(currentSection, stEntry->getValue(), false);
     relaEntry = new RelocationTableEntry(
-      locationCounter, RELA_INFO(stEntry->getIndex(), R_X86_64_32), stEntry->getValue()
+      locationCounter, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
     );
   }
   else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
     Utils::addWord(currentSection, 0, false);  
-    relaEntry = new RelocationTableEntry(locationCounter, RELA_INFO(symbolIndex, R_X86_64_32));
+    relaEntry = new RelocationTableEntry(locationCounter, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
   }
 
   if (relaEntry != nullptr && relatab->notAssigned(relaEntry)) {
@@ -193,6 +193,13 @@ void AssemblyDirectives::end() {
   else {
     for (int i = 0; i < sectiontab.size(); i++) {
       sectiontab[i]->copyLiteralPool();
+    }
+
+    SymbolTable& symtab = SymbolTable::getInstance();
+    for (int i = 0; i < symtab.size(); i++) {
+      if (symtab[i]->getIndex() == UND && ST_BIND(symtab[i]->getInfo()) == STBIND_GLOBAL) {
+        throw AssemblyException("Symbol " + symtab[i]->getName() + " is marked global but not defined inside this translation unit!");
+      }
     }
 
     ofstream output(Assembler::getInstance().getFileName(), ios::binary);

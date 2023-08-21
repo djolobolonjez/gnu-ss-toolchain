@@ -94,7 +94,8 @@ void Assembler::dumpSectionData(Section*& section, ofstream& buff) {
   for (int i = 0; i < relatable.size(); i++) {
     buff << "--";
     buff << relatable[i]->offset << " " << RELA_TYPE(relatable[i]->info) << " ";
-    buff << RELA_SYM(relatable[i]->info) << " " << relatable[i]->addend << "\n";
+    buff << RELA_SYM(relatable[i]->info) << " " << relatable[i]->addend << " ";
+    buff << relatable[i]->type << "\n";
   }
   buff << "#\n";
 }

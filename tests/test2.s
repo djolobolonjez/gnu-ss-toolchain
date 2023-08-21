@@ -1,14 +1,13 @@
-.global a,b,c
-.global d
+.global y, h
 .section my_section
-a: .global e
+a:
 .extern f
 .skip 4
 b: .word b, 16
 d: .skip 8
 e: .word e, j, 0x10
-k: xchg %r1, %r2
-int
+y: xchg %r1, %r2
+h:int
 j: 
 halt
 .end
