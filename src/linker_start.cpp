@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
   bool hex = false;
   string filename = "output.hex";
   vector<string> inputFiles;
-  map<string, int> sectionsPlace;
+  map<string, long> sectionsPlace;
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-hex") == 0) {
@@ -37,7 +37,9 @@ int main(int argc, char** argv) {
         string sectionPlace = argument.substr(7);
         int separator = sectionPlace.find("@");
         string section = sectionPlace.substr(0, separator);
-        int location = stoi(sectionPlace.substr(separator + 1), nullptr, 16);
+        cout << "OK" << endl;
+        long location = stol(sectionPlace.substr(separator + 1), nullptr, 16);
+        cout << "OK1" << endl;
         sectionsPlace[section] = location;
       }
       else {
@@ -50,10 +52,14 @@ int main(int argc, char** argv) {
   }
   if (!hex) {
     cerr << "Missing -hex option!" << endl;
+    return -1;
   }
+
+  cout << "OK" << endl;
 
   Linker& linker = Linker::getInstance();
 
+  linker.setOutput(filename);
   linker.setInputFiles(inputFiles);
   linker.setSectionsPlace(sectionsPlace);
   try {

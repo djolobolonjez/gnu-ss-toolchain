@@ -29,6 +29,7 @@ void Linker::updateSectionHeaders(string name, int size, int fileIndex, int inde
 
 void Linker::placeSections() {
   for (auto entry : outputSections) {
+    inputSections[entry.first] = outputSections[entry.first];
     if (sectionsPlace.find(entry.first) != sectionsPlace.end()) {
       outputSections[entry.first] = sectionsPlace[entry.first];
     }
@@ -191,8 +192,8 @@ void Linker::resolveSymbols() {
     if (ST_TYPE(symtab[i]->getInfo()) != STTYPE_SECTION) {
       int index = symtab[i]->getIndex();
       string section = symtab[index]->getName();
-      int offset = outputSections[section];
-      ulong value = symtab[i]->getValue();
+      long offset = outputSections[section];
+      long value = symtab[i]->getValue();
       symtab[i]->setValue(value + offset);
     }
   }
@@ -209,13 +210,6 @@ void Linker::resolveRelocations() {
     vector<RelocationTableEntry*> relocationEntries = entry.second;
 
     for (auto rela : relocationEntries) {
-      cout << hex << rela->offset << "\t";
-      if (RELA_TYPE(rela->info) == R_X86_64_32) {
-        cout << "R_X86_64_32";
-      }
-      cout << "\t";
-      cout << hex << RELA_SYM(rela->info) << "\t";
-      cout << hex << rela->addend << endl;
       ulong value = rela->addend + symtab[RELA_SYM(rela->info)]->getValue();
       string section = finalSections[childSection];
       int sectionIndex = sectiontab.getSectionIndexByName(section);
@@ -228,6 +222,20 @@ void Linker::resolveRelocations() {
       unsigned data;
       ss >> hex >> data;
       Utils::editContent(content, data, false, offset);
+    }
+  }
+}
+
+void Linker::checkIntersections() {
+  for (auto lhs : outputSections) {
+    for (auto rhs : outputSections) {
+      int lhsLower = lhs.second;
+      int lhsUpper = lhsLower + inputSections[lhs.first];
+      int rhsLower = rhs.second;
+      int rhsUpper = rhsLower + inputSections[rhs.first];
+      if (lhs.first != rhs.first && (max(lhsLower, rhsLower) < min(lhsUpper, rhsUpper))) {
+        throw LinkerException("Sections "  + lhs.first + " and " + rhs.first + " overlap!");
+      }
     }
   }
 }
@@ -310,29 +318,37 @@ void Linker::parseInputFiles() {
   // }
   checkSymbolTable();
   placeSections();
+  checkIntersections();
   resolveSymbols();
   resolveRelocations();
+
+  ofstream outputFile(output);
+
+  if (!outputFile.is_open()) {
+    throw LinkerException("Unable to generate output file!");
+  }
 
   SectionTable& sectiontab = SectionTable::getInstance();
   for (int i = 0; i < sectiontab.size(); i++) {
     vector<char>& v = sectiontab[i]->getContent();
-    for (int address = 0; address < v.size(); address += 8) {
-      std::cout << setw(4) << setfill('0') << hex << address << ": ";
+    string name = sectiontab[i]->getName();
+    for (int address = 0; address < v.size(); address += 4) {
+      outputFile << setw(8) << setfill('0') << hex << address + outputSections[name] << ": ";
 
-      for (int offset = 0; offset < 8; offset++) {
+      for (int offset = 0; offset < 4; offset++) {
           int byteAddress = address + offset;
           if (byteAddress < v.size())
-              std::cout << setw(2) << setfill('0') << hex << ((int)(unsigned char)v[byteAddress] & 0xff);
+              outputFile << setw(2) << setfill('0') << hex << ((int)(unsigned char)v[byteAddress] & 0xff);
           else
-              std::cout << "  ";
+              outputFile << " ";
 
-          std::cout << " ";
+          
       }
 
-      std::cout << std::endl;
+      outputFile << "\n";
     } 
-    cout << endl;
   }
+  outputFile.close();
   
   // for (auto entry : outputSections) {
   //   cout << entry.first << ": " << entry.second << endl;

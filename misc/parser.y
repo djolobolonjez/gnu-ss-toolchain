@@ -98,6 +98,7 @@ instructions:
    }
   | TOKEN_SYM TOKEN_COLON TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } else { _asm_label($1, secondPass); }
       instructionFirstPass();
+      instructionFirstPass();
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_RET { 
       if (secondPass) { 
@@ -184,7 +185,7 @@ instructions:
   
   | TOKEN_HALT { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
   | TOKEN_INT { if (secondPass) { _asm_instr_int(); }  instructionFirstPass(); }
-  | TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } instructionFirstPass(); }
+  | TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } instructionFirstPass(); instructionFirstPass(); }
   | TOKEN_RET { 
       if (secondPass) { 
         InstructionArguments* args = Utils::create_instruction(0x3); _asm_instr_ret(args); 

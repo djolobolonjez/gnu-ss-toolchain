@@ -26,8 +26,6 @@ void AssemblyInstructions::firstPass(InstructionArguments* instruction) {
  
   if (instruction != nullptr) {
     ArgVector arguments = *(instruction->args);
-    if (symtab.foundEntryByName("y")) {
-    }
     if (arguments[0].type == 0 && !symtab.foundEntryByName(*(arguments[0].value))) {
       symtab.addSymbol(*(arguments[0].value), 0, ST_INFO(STBIND_LOCAL, STTYPE_NOTYPE), currentSection->getId(), 0);
     }

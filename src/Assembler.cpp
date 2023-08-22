@@ -30,7 +30,7 @@ int Assembler::label(string* labelPtr) {
     throw AssemblyException("Symbol has to be defined inside an existing section!");
   }
 
-  ulong locationCounter = sectiontab.getCurrentSection()->getLocationCounter();
+  long locationCounter = sectiontab.getCurrentSection()->getLocationCounter();
   int sectionIndex = sectiontab.getCurrentSection()->getId();
 
   SymbolTable& symtab = SymbolTable::getInstance();
@@ -40,6 +40,9 @@ int Assembler::label(string* labelPtr) {
 
     if (stEntry->isDefined() || stEntry->isExtern()) {
       throw AssemblyException("Symbol " + stEntry->getName() + " is already defined!" );
+    }
+    if (ST_BIND(stEntry->getInfo()) == STBIND_EXTERN) {
+      stEntry->setInfo(ST_INFO(STBIND_LOCAL, STTYPE_NOTYPE));
     }
 
     // otherwise, symbol was mentioned before definition, so we define it now

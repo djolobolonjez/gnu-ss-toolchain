@@ -32,7 +32,7 @@ struct InstructionArguments : public AssemblyLineArguments {
 };
 
 struct SymbolTableEntry {
-    ulong value;
+    long value;
     ulong size;
     byte info;
     int index;
@@ -40,7 +40,7 @@ struct SymbolTableEntry {
     bool defined = false;
     bool ext = false;
 
-    SymbolTableEntry(ulong _value, string _name, 
+    SymbolTableEntry(long _value, string _name, 
                      byte _info, int _index, 
                      ulong _size
                      ) : value(_value), name(_name), index(_index), info(_info), size(_size) {}
@@ -57,7 +57,7 @@ struct SymbolTableEntry {
     void setExtern(bool _ext) { ext = _ext; }
     void setIndex(int _index) { index = _index; } 
     void setInfo(byte _info) { info = _info; }
-    void setValue(ulong _value) { value = _value; }
+    void setValue(long _value) { value = _value; }
   };
 
   struct RelocationTableEntry {

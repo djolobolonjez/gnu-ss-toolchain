@@ -22,7 +22,7 @@ public:
   bool foundEntryByName(string name) const { return entryIndexMap.find(name) != entryIndexMap.end(); } 
   int getIndexOfEntry(string name) { return entryIndexMap[name]; }
 
-  void addSymbol(string name, ulong value, byte info, int index, ulong size);
+  void addSymbol(string name, long value, byte info, int index, ulong size);
 
   SymbolTableEntry*& operator[](int index) { return symtab[index]; }
 

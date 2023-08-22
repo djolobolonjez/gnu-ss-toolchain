@@ -12,7 +12,7 @@ private:
   string name;
   
   int id;
-  int locationCounter;
+  long locationCounter;
   int size;
   
   RelocationTable* relaLink; // add the implementation of rela table entry
@@ -31,7 +31,7 @@ public:
 
   string getName() const { return name; }
   int getId() const { return id; }
-  int getLocationCounter() const { return locationCounter; }
+  long getLocationCounter() const { return locationCounter; }
   int getSize() const { return content.size(); }
   vector<char>& getContent() { return content; }
 
