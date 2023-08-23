@@ -74,4 +74,9 @@ struct SymbolTableEntry {
     } 
   };
 
+  struct Registers {
+    int gpr[16];
+    int csr[3];
+  };
+
 #endif // TYPES_H_

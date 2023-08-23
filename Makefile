@@ -8,6 +8,9 @@ asm:
 link:
 	g++ src/Linker.cpp src/linker_start.cpp src/Section.cpp src/SectionTable.cpp src/SymbolTable.cpp src/utils.cpp src/AssemblyDirectives.cpp src/Assembler.cpp src/AssemblyInstructions.cpp -o linker
 
+emu: 
+	g++ src/Emulator.cpp -o emulator
+
 clean:
 	rm -f parser.cpp lexer.cpp parser.hpp lexer.hpp ./assembler
 
