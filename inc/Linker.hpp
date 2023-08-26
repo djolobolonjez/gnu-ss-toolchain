@@ -27,7 +27,7 @@ private:
   string output;
 
   vector<int> parseTableEntry(string, string*);
-  void fixRelocation(vector<RelocationTableEntry*>&, int, int, string);
+  void fixRelocation(int, int, string);
 public:
   static Linker& getInstance();
 

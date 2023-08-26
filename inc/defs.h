@@ -28,8 +28,8 @@
 #define R_X86_64_PC32 0
 #define R_X86_64_32 1
 
-#define HALT 0x00000000
-#define INT  0x10000000
+#define HALT 0x00
+#define INT  0x10
 #define XCHG 0x40
 #define ARITHMETIC 0x50
 #define ADD ARITHMETIC
@@ -45,8 +45,8 @@
 #define SHR 0x71
 #define ST 0x80
 #define LD 0x90
-#define CALL 0x20
-#define JMP 0x30
+#define CALL 0x21
+#define JMP 0x38
 #define BEQ 0x39
 #define BNE 0x3A
 #define BGT 0x3B

@@ -123,13 +123,13 @@ void Assembler::printSymbolTable() {
   cout << endl << "#.symtab" << endl;
 
   cout << "Num" << "\t" << "Value" << "\t" << "Size" << "\t" << "Type" << "\t" 
-  << "Bind" << "\t" << "Index" << "\t" << "Name";
+  << "Bind" << "\t" << "Index" << "\t" << "Name" << "\t" << "FILE";
   cout << endl;
 
   for (int i = 0; i < symtab.size(); i++) {
     SymbolTableEntry*& stEntry = symtab[i];
     cout << i << "\t";
-    cout << hex << stEntry->value << "\t";
+    cout << hex << stEntry->value << "\t" << "\t";
     cout << stEntry->size << "\t";
 
     cout << (ST_TYPE(stEntry->info) == STTYPE_NOTYPE ? "NOTYPE" : "SECTION");
@@ -152,7 +152,7 @@ void Assembler::printSymbolTable() {
     else {
       cout << stEntry->index;
     }
-    cout << "\t" << stEntry->name << endl;
+    cout << "\t" << stEntry->name << "\t" << stEntry->file << endl;
   }
   cout << "------------------------------------" << endl;
 }

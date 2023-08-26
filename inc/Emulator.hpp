@@ -3,8 +3,11 @@
 
 #include "types.h"
 #include <map>
+#include <iostream>
 
-typedef map<long, char> Memory;
+using namespace std;
+
+typedef map<long, int> Memory;
 
 class Emulator {
 
@@ -15,6 +18,8 @@ private:
   Memory memory;
 public:
   static Emulator& getInstance();
+  static unsigned int toLittleEndian(unsigned int);
+  static unsigned int fromLittleEndian(unsigned int);
   Registers& getRegisters() { return registers; }
   Memory& getMemory() { return memory; }
   void printProcessorState();

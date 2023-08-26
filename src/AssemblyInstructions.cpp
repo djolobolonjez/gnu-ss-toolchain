@@ -71,11 +71,16 @@ void AssemblyInstructions::literalPool(InstructionArguments* instruction) {
 }
 
 void AssemblyInstructions::halt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), HALT, true);
+  stringstream ss; 
+  ss << hex << setw(8) << HALT << setfill('0'); 
+  Utils::toBytesHex(ss, true);
 }
 
 void AssemblyInstructions::interrupt() {
-  Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT, true);
+  stringstream ss;
+  ss << hex << setw(8) << 0x10000000;
+  Utils::toBytesHex(ss, true);
+  //Utils::addWord(SectionTable::getInstance().getCurrentSection(), INT, true);
 }
 
 void AssemblyInstructions::iret() {
@@ -107,7 +112,7 @@ void AssemblyInstructions::arithmetic(int modificator, string regOne, string reg
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   
   stringstream ss;
-  ss << hex << setw(1) << ARITHMETIC << modificator << second << first << second;
+  ss << hex << setw(1) << (ARITHMETIC | modificator) << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
   Utils::toBytesHex(ss, true);
@@ -117,7 +122,7 @@ void AssemblyInstructions::logical(int modificator, string regOne, string regTwo
   int first = stoi(regOne.substr(1)), second = stoi(regTwo.substr(1));
   
   stringstream ss;
-  ss << hex << setw(1) << LOGICAL << modificator << second << first << second;
+  ss << hex << setw(1) << (LOGICAL | modificator) << second << first << second;
   ss << hex << setfill('0') << setw(3) << 0;
 
   Utils::toBytesHex(ss, true);
@@ -183,11 +188,11 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
 
         if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
           relaEntry = new RelocationTableEntry(
-            locationCounter + code.displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
+            locationCounter + code.displacement + 4, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
           );
         }
         else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-          relaEntry = new RelocationTableEntry(locationCounter + code.displacement, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
+          relaEntry = new RelocationTableEntry(locationCounter + code.displacement + 4, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
         }
 
         if (relaEntry != nullptr && relatab->notAssigned(relaEntry)) {
@@ -340,11 +345,11 @@ void AssemblyInstructions::ld(InstructionArguments* instruction, opcode code) {
 
         if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
           relaEntry = new RelocationTableEntry(
-            locationCounter + code.displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
+            locationCounter + code.displacement + 4, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
           );
         }
         else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-          relaEntry = new RelocationTableEntry(locationCounter + code.displacement, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
+          relaEntry = new RelocationTableEntry(locationCounter + code.displacement + 4, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
         }
 
         if (relaEntry != nullptr) {
@@ -489,11 +494,11 @@ void AssemblyInstructions::call(InstructionArguments* instruction) {
 
     if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
       relaEntry = new RelocationTableEntry(
-        locationCounter + displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
+        locationCounter + displacement + 4, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
       );
     }
     else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-      relaEntry = new RelocationTableEntry(locationCounter + displacement, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
+      relaEntry = new RelocationTableEntry(locationCounter + displacement + 4, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
     }
 
     if (relaEntry != nullptr) {
@@ -540,11 +545,11 @@ void AssemblyInstructions::jmp(InstructionArguments* instruction) {
 
     if (ST_BIND(stEntry->getInfo()) == STBIND_LOCAL) {
       relaEntry = new RelocationTableEntry(
-        locationCounter + displacement, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
+        locationCounter + displacement + 4, RELA_INFO(stEntry->getIndex(), R_X86_64_32), "LOC", stEntry->getValue()
       );
     }
     else if ((ST_BIND(stEntry->getInfo()) == STBIND_GLOBAL) || (stEntry->isDefined() == false)) {
-      relaEntry = new RelocationTableEntry(locationCounter + displacement, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
+      relaEntry = new RelocationTableEntry(locationCounter + displacement + 4, RELA_INFO(symbolIndex, R_X86_64_32), "GLOB");
     }
 
     if (relaEntry != nullptr) {

@@ -24,7 +24,36 @@ Emulator& Emulator::getInstance() {
 void Emulator::printProcessorState() {
   cout << "----------------------------------------" << endl;
   cout << "Emulated processor executed halt instruction" << endl;
+  for (int i = 0; i < 16; i++) {
+    cout << "r" << to_string(i) << ": ";
+    cout << hex << setw(8) << setfill('0') << registers.gpr[i] << endl;
+  }
 }
+
+unsigned int Emulator::toLittleEndian(unsigned int num) {
+  unsigned char bytes[4];
+  bytes[0] = static_cast<unsigned char>(num & 0xff);
+  bytes[1] = static_cast<unsigned char>((num >> 8) & 0xff);
+  bytes[2] = static_cast<unsigned char>((num >> 16) & 0xff);
+  bytes[3] = static_cast<unsigned char>((num >> 24) & 0xff);
+
+  return bytes[3] | (static_cast<unsigned int>(bytes[2]) << 8) |
+                    (static_cast<unsigned int>(bytes[1]) << 16) |
+                    (static_cast<unsigned int>(bytes[0]) << 24);
+}
+
+unsigned int Emulator::fromLittleEndian(unsigned int num) {
+  unsigned char bytes[4];
+  bytes[0] = static_cast<unsigned char>(num & 0xff);
+  bytes[1] = static_cast<unsigned char>((num >> 8) & 0xff);
+  bytes[2] = static_cast<unsigned char>((num >> 16) & 0xff);
+  bytes[3] = static_cast<unsigned char>((num >> 24) & 0xff);
+
+  return bytes[3] | (static_cast<unsigned int>(bytes[2]) << 8) |
+                    (static_cast<unsigned int>(bytes[1]) << 16) |
+                    (static_cast<unsigned int>(bytes[0]) << 24);
+}
+
 
 int main(int argc, char** argv) {
   Emulator& emulator = Emulator::getInstance();
@@ -46,6 +75,9 @@ int main(int argc, char** argv) {
   Memory& memory = emulator.getMemory();
   Registers& registers = emulator.getRegisters();
 
+  registers.gpr[r1] = 2;
+  registers.gpr[r2] = 3; 
+
   string line;
   while (getline(input, line)) {
     string delimiter = ": ";
@@ -53,33 +85,158 @@ int main(int argc, char** argv) {
 
     long address = stol(line.substr(0, pos), nullptr, 16);
     string content = line.substr(pos + 2);
-    for (int i = 0; i < 4; i++) {
-      stringstream ss;
-      ss << hex << content.substr(2 * i, 2);
-      unsigned int data;
-      ss >> data;
-      char memoryContent = static_cast<char>(data);
-      memory[address] = memoryContent;
-      // cout << setw(8) << hex << setfill('0') << address + i << ": ";
-      // std::cout << 
-      //       std::hex << std::setw(2) << std::setfill('0')
-      //       << static_cast<int>(static_cast<unsigned char>(memoryContent))
-      //       << std::endl;
-    }
+    stringstream ss;
+    ss << hex << content;
+    unsigned int data;
+    ss >> hex >> data;
+    memory[address] = data;
   }
   input.close();
 
   registers.gpr[pc] = 0x40000000;
+  registers.gpr[sp] = 0xffffff00;
+  registers.csr[handler] = 0xf0000000;
   bool running = true;
   int nextInstruction;
 
   while (running) {
-    nextInstruction = memory[registers.gpr[pc]++];
-    cout << hex << setw(8) << setfill('0') << registers.gpr[pc] << endl;
+    cout << "PC: " << hex << setw(8) << setfill('0') << registers.gpr[pc] << endl;
+    nextInstruction = memory[registers.gpr[pc]];
+    registers.gpr[pc] += 4;
 
-    switch (nextInstruction) {
+    int opcode = (nextInstruction & 0xff000000) >> 24;
+    int byteTwo = (nextInstruction & 0x00ff0000) >> 16;
+    int byteThree = (nextInstruction & 0x0000ff00) >> 8;
+    int byteFour = nextInstruction & 0xff;  
+
+    int regA = (byteTwo >> 4) & 0xf, regB = byteTwo & 0xf, regC = (byteThree >> 4) & 0xf;
+    int displacement = byteFour | ((byteTwo & 0xf) << 8);
+
+    switch (opcode) {
       case HALT: {
         running = false;
+        break;
+      }
+      case INT: {
+        registers.gpr[sp] -= 4;
+        memory[registers.gpr[sp]] = Emulator::toLittleEndian(registers.csr[status]);
+        registers.gpr[sp] -= 4;
+        memory[registers.gpr[sp]] = Emulator::toLittleEndian(registers.gpr[pc]);
+        registers.csr[cause] = 0x4;
+        registers.csr[status] &= (~0x1);
+        registers.gpr[pc] = registers.csr[handler];
+        break;
+      }
+      case XCHG: {
+        if (regB == 0 || regC == 0) {
+          break;
+        }
+        int tmp = registers.gpr[regB];
+        registers.gpr[regB] = registers.gpr[regC];
+        registers.gpr[regC] = tmp;
+        break;
+      }
+      case ADD: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] + registers.gpr[regC];
+        break;
+      }
+      case SUB: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] - registers.gpr[regC];
+        break;
+      }
+      case MUL: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] * registers.gpr[regC];
+        break;
+      }
+      case DIV: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] / registers.gpr[regC];
+        break;
+      }
+      case NOT: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = ~registers.gpr[regB];
+        break;
+      }
+      case AND: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] & registers.gpr[regC];
+        break;
+      }
+      case OR: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] | registers.gpr[regC];
+        break;
+      }
+      case XOR: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] ^ registers.gpr[regC];
+        break;
+      }
+      case SHL: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] << registers.gpr[regC];
+        break;
+      }
+      case SHR: {
+        if (regA == 0) {
+          break;
+        }
+        registers.gpr[regA] = registers.gpr[regB] >> registers.gpr[regC];
+        break;
+      }
+      case CALL: {
+       registers.gpr[sp] -= 4;
+       memory[registers.gpr[sp]] = Emulator::toLittleEndian(registers.gpr[pc]);
+       long address = registers.gpr[regA] + registers.gpr[regB] + displacement;
+       registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
+       break;
+      }
+      case JMP: {
+        long address = registers.gpr[regA] + displacement;
+        registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
+        break;
+      }
+      case BEQ: {
+        long address = registers.gpr[regA] + displacement;
+        if (registers.gpr[regB] == registers.gpr[regC]) {
+          registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
+        }
+        break;
+      }
+      case BNE: {
+        long address = registers.gpr[regA] + displacement;
+        if (registers.gpr[regB] != registers.gpr[regC]) {
+          registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
+        }
+        break;
+      }
+      case BGT: {
+        long address = registers.gpr[regA] + displacement;
+        if (registers.gpr[regB] > registers.gpr[regC]) {
+          registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
+        }
         break;
       }
     }

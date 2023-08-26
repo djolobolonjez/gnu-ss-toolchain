@@ -1,13 +1,17 @@
 .global a,b,c
 .global d
 .section my_section
-a: .global e
+call a
+halt
+a: int 
+.global e
 .global f
 .skip 4
 b: .word b, 16
 d: .skip 8
 e: .word e, j, 0x10
 #k: xchg %r1, %r2
+call x
 int
 j: 
 
@@ -15,8 +19,8 @@ j:
 #not %r2
 x:add %r1, %r2
 beq %r1, %r2, x
-ld [%r3], %r2
-ld $50, %r2
+#ld [%r3], %r2
+#ld $50, %r2
 jmp y
 ld [%r3+45], %r1
 ld 75, %r2
@@ -29,10 +33,14 @@ push %r2
 
 pop %r2
 .section other_section
+xchg %r1, %r2
+jmp j
+#halt
 .word 8, i
 ret
 csrrd %status, %r13
 c: .extern h
-f:iret
+f: xchg %r1, %r2
+jmp h
 halt
 i: .end

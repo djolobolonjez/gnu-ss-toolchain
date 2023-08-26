@@ -39,6 +39,7 @@ struct SymbolTableEntry {
     string name;
     bool defined = false;
     bool ext = false;
+    int file = 0;
 
     SymbolTableEntry(long _value, string _name, 
                      byte _info, int _index, 
@@ -65,18 +66,20 @@ struct SymbolTableEntry {
     ulong info;
     int addend;
     string type;
+    bool fixed;
 
     RelocationTableEntry(ulong _offset, ulong _info, string _type, int _addend = 0) {
       offset = _offset;
       info = _info;
       addend = _addend;
       type = _type;
+      fixed = false;
     } 
   };
 
   struct Registers {
-    int gpr[16];
-    int csr[3];
+    long gpr[16];
+    long csr[3];
   };
 
 #endif // TYPES_H_
