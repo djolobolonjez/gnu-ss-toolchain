@@ -37,6 +37,7 @@ public:
   void call(InstructionArguments*);
   void jmp(InstructionArguments*);
   void csrrd(InstructionArguments*);
+  void csrwr(InstructionArguments*);
 };
 
 #endif // ASSEMBLY_INSTRUCTIONS_HPP_

@@ -55,6 +55,12 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+  // inputFiles.push_back("handler.o");
+  // inputFiles.push_back("math.o");
+  // inputFiles.push_back("main.o");
+  // inputFiles.push_back("isr_terminal.o");
+  // inputFiles.push_back("isr_timer.o");
+  // inputFiles.push_back("isr_software.o");
   cout << "OK" << endl;
 
   Linker& linker = Linker::getInstance();

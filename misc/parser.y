@@ -71,7 +71,7 @@ directives:
   TOKEN_SYM TOKEN_COLON TOKEN_GLOBAL symlist { _asm_label($1, secondPass); _asm_dir_global($4, secondPass); delete $1; delete $4; }
   | TOKEN_SYM TOKEN_COLON TOKEN_EXTERN symlist { _asm_label($1, secondPass); _asm_dir_extern($4, secondPass); delete $4; delete $1; }
   | TOKEN_SYM TOKEN_COLON TOKEN_SECTION TOKEN_SYM  { _asm_label($1, secondPass); _asm_dir_section($4, secondPass); delete $1; delete $4; }
-  | TOKEN_SYM TOKEN_COLON TOKEN_WORD symlist { _asm_label($1, secondPass); _asm_dir_word($4, secondPass); delete $1; delete $4; } 
+  | TOKEN_SYM TOKEN_COLON TOKEN_WORD symlist endls { _asm_label($1, secondPass); _asm_dir_word($4, secondPass); delete $1; delete $4; } 
   | TOKEN_SYM TOKEN_COLON TOKEN_SKIP TOKEN_LITERAL { _asm_label($1, secondPass); _asm_dir_skip($4, secondPass); delete $1; delete $4; }
   | TOKEN_SYM TOKEN_COLON TOKEN_ASCII TOKEN_STRING { _asm_label($1, secondPass); _asm_dir_ascii($4, secondPass); delete $1; delete $4; }
   | TOKEN_SYM TOKEN_COLON TOKEN_EQU TOKEN_SYM TOKEN_COMMA expr { cout << "Matched .equ directive with symbol preceding" << endl; }
@@ -128,13 +128,13 @@ instructions:
   | TOKEN_SYM TOKEN_COLON TOKEN_ST register TOKEN_COMMA operand {
       if (secondPass) { $6->args->push_back({$4, 2}); _asm_instr_st($6); } 
       else { _asm_label($1, secondPass); }
-      if(!secondPass && ($6->modificator == 0x8 || $6->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($6); } }
+      if(!secondPass && ($6->modificator == 0x8 || $6->modificator == 0x9)) { instructionFirstPass($6); }
       else { instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_LD operand TOKEN_COMMA register { 
       if (secondPass) { $4->args->push_back({$6, 2}); _asm_instr_ld($4); } 
       else { _asm_label($1, secondPass); }
-      if (!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($4); } }
+      if (!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 2; i++) { instructionFirstPass($4); } }
       else { instructionFirstPass(); }
     }
   | TOKEN_SYM TOKEN_COLON TOKEN_PUSH operand {
@@ -174,17 +174,23 @@ instructions:
       else { _asm_label($1, secondPass); }
       instructionFirstPass($10);
     }
-  | TOKEN_SYM TOKEN_COLON TOKEN_CSRRD TOKEN_PERCENT TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
+  | TOKEN_SYM TOKEN_COLON TOKEN_CSRRD TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
       InstructionArguments* instruction = Utils::create_instruction(0x0);
-      instruction->args->push_back({$5, 2});
-      instruction->args->push_back({$8, 2});  
+      instruction->args->push_back({new string($4->substr(1)), 2});
+      instruction->args->push_back({$7, 2});  
       if (secondPass) { _asm_instr_csrrd(instruction); } else { _asm_label($1, secondPass); }
       instructionFirstPass(); 
     }
-  | TOKEN_SYM TOKEN_COLON TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_CSR { }
+  | TOKEN_SYM TOKEN_COLON TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_CSR { 
+      InstructionArguments* instruction = Utils::create_instruction(0x4);
+      instruction->args->push_back({new string($7->substr(1)), 2});
+      instruction->args->push_back({$5, 2});  
+      if (secondPass) { _asm_instr_csrwr(instruction); } else { _asm_label($1, secondPass); }
+      instructionFirstPass(); 
+    }
   
   | TOKEN_HALT { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
-  | TOKEN_INT { if (secondPass) { _asm_instr_int(); }  instructionFirstPass(); }
+  | TOKEN_INT { if (secondPass) { _asm_instr_int(); cout << "OK INT" << endl; }  instructionFirstPass(); }
   | TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } instructionFirstPass(); instructionFirstPass(); }
   | TOKEN_RET { 
       if (secondPass) { 
@@ -199,12 +205,15 @@ instructions:
   | TOKEN_DIV register TOKEN_COMMA register { if(secondPass) { _asm_instr_arithmetic(3, $2, $4); } instructionFirstPass(); }
   | TOKEN_NOT register { if(secondPass) { _asm_instr_logical(0, $2, $2); } instructionFirstPass(); }
   | TOKEN_ST register TOKEN_COMMA operand { if (secondPass) { $4->args->push_back({$2, 2}); _asm_instr_st($4); } 
-      if(!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($4); } }
+      if(!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { instructionFirstPass($4); }
       else { instructionFirstPass($4); }
+
+      cout << "OVO PROLAZI" << endl;
     }
   | TOKEN_LD operand TOKEN_COMMA register { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } 
-      if (!secondPass && ($2->modificator == 0x8 || $2->modificator == 0x9)) { for (int i = 0; i < 4; i++) { instructionFirstPass($2); } }
+      if (!secondPass && ($2->modificator == 0x8 || $2->modificator == 0x9)) { for (int i = 0; i < 2; i++) { instructionFirstPass($2); } }
       else { instructionFirstPass($2); }
+      cout << "PROSAO OVDE" << endl;
     }
   | TOKEN_PUSH operand { if (secondPass) { $2->modificator=0x1; _asm_instr_push($2); } instructionFirstPass(); }
   | TOKEN_POP operand { if (secondPass) { $2->modificator = 0x3; _asm_instr_pop($2); } instructionFirstPass(); }
@@ -231,14 +240,20 @@ instructions:
       if (secondPass) { _asm_instr_jmp($8); }
       instructionFirstPass($8);
     }
-  | TOKEN_CSRRD TOKEN_PERCENT TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
+  | TOKEN_CSRRD TOKEN_CSR TOKEN_COMMA TOKEN_PERCENT TOKEN_GPR { 
       InstructionArguments* instruction = Utils::create_instruction(0x0);
-      instruction->args->push_back({$3, 2});
-      instruction->args->push_back({$6, 2});  
+      instruction->args->push_back({new string($2->substr(1)), 2});
+      instruction->args->push_back({$5, 2});  
       if (secondPass) { _asm_instr_csrrd(instruction); }
       instructionFirstPass(); 
     }
-  | TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_PERCENT TOKEN_CSR { }
+  | TOKEN_CSRWR TOKEN_PERCENT TOKEN_GPR TOKEN_COMMA TOKEN_CSR { 
+      InstructionArguments* instruction = Utils::create_instruction(0x4);
+      instruction->args->push_back({new string($5->substr(1)), 2});
+      instruction->args->push_back({$3, 2});  
+      if (secondPass) { _asm_instr_csrwr(instruction); }
+      instructionFirstPass(); 
+    }
   ;
 
 symlist:
@@ -306,7 +321,7 @@ endls:
 
 %%
 
-
+static string inputFile;
 int main(int argc, char** argv) {
   string filename, out, in;
   if (argc == 2) {
@@ -325,7 +340,7 @@ int main(int argc, char** argv) {
     return -1;
   }
   
-  string inputFile = "tests/" + in;
+  inputFile = "tests/" + in;
   FILE* fp = fopen(inputFile.c_str(), "r");
   
   if (!fp) {
@@ -359,5 +374,6 @@ int main(int argc, char** argv) {
 
 void yyerror(const char* s) {
   cout << "Parse error on line " << line_num << endl << "Message: " << s << endl;
+  cout << inputFile << endl;
   exit(-1);
 }

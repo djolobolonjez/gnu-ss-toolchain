@@ -62,24 +62,6 @@ void Linker::fillSection(string name, string line) {
     iss >> std::hex >> value;
     Utils::addWord(section, value, true);
   }
-
-  // vector<char>& v = section->getContent();
-  // for (int address = 0; address < v.size(); address += 8) {
-  //   std::cout << setw(4) << setfill('0') << hex << address << ": ";
-
-  //   for (int offset = 0; offset < 8; offset++) {
-  //       int byteAddress = address + offset;
-  //       if (byteAddress < v.size())
-  //           std::cout << setw(2) << setfill('0') << hex << ((int)(unsigned char)v[byteAddress] & 0xff);
-  //       else
-  //           std::cout << "  ";
-
-  //       std::cout << " ";
-  //   }
-
-  //   std::cout << std::endl;
-  // } 
-  // cout << endl;
 }
 
 void Linker::checkSymbolTable() {
@@ -127,20 +109,34 @@ void Linker::parseRelaEntry(string name, string line, int fileIndex) {
   ));
 }
 
-void Linker::fixRelocation(int index, int oldIndex, string type) {
+void Linker::fixRelocations() {
+  SymbolTable& symtab = SymbolTable::getInstance();
   for (auto relaEntry: relocations) {
-    for (auto rela : relaEntry.second) {
-    if (oldIndex == RELA_SYM(rela->info) && rela->type == type && !rela->fixed) {
-      if (relaEntry.first == "my_section2") {
-        cout << index << " " << oldIndex << endl << " " << type << endl;
+    for (auto rela: relaEntry.second) {
+      int fileIndex = stoi(relaEntry.first.substr(relaEntry.first.length() - 1));
+      cout << "INDEX: " << fileIndex << endl;
+      for (int i = 1; i < symtab.size(); i++) {
+        SymbolTable& symtab = SymbolTable::getInstance();
+        if (!rela->fixed && symtab[i]->indexMap[fileIndex] == RELA_SYM(rela->info) && rela->type == "GLOB") {
+          rela->info = RELA_INFO(i, RELA_TYPE(rela->info));
+          rela->fixed = true;
+        }
+         
       }
-      ulong info = rela->info;
-      rela->info = RELA_INFO(index, RELA_TYPE(info));
-      rela->fixed = true;
     }
   }
-}
-  
+  for (auto entry : relocations) {
+    cout << entry.first << endl;
+    for (auto rela : entry.second) {
+      cout << hex << rela->offset << "\t";
+      if (RELA_TYPE(rela->info) == R_X86_64_32) {
+        cout << "R_X86_64_32";
+      }
+      cout << "\t";
+      cout << hex << RELA_SYM(rela->info) << "\t";
+      cout << hex << rela->addend << " " << rela->type << endl;
+    }
+  }
 }
 
 void Linker::populateSymbolTable(string line, int fileIndex) {
@@ -151,25 +147,34 @@ void Linker::populateSymbolTable(string line, int fileIndex) {
   string section = fileSectionMap[fileIndex][entry[4]];
   string childSection = section + to_string(fileIndex);
   int index = symtab.getIndexOfEntry(section);
+  int sectionIndex = SectionTable::getInstance().getSectionIndexByName(section);
 
-  //vector<RelocationTableEntry*>& relaEntries = relocations[childSection];
   int newIndex = 0;
+  int symbolIndex = symtab.getIndexOfEntry(name);
 
   if (entry[2] == STTYPE_SECTION) {
     return;
   }
   if (entry[3] == STBIND_LOCAL) {
     name += "(" + to_string(fileIndex) + ")";
-    int sectionIndex = SectionTable::getInstance().getSectionIndexByName(section);
+    for (auto relaEntry : relocations) {
+      for (auto rela : relaEntry.second) {
+        if (childSection == relaEntry.first && !rela->fixed && rela->type == "LOC") {
+          if (RELA_SYM(rela->info) == shdr[section]) {
+            rela->info = RELA_INFO(index, RELA_TYPE(rela->info));
+            rela->fixed = true;
+          }
+        }
+      }
+    }
     newIndex = SectionTable::getInstance()[sectionIndex]->getId();
-    fixRelocation(newIndex, shdr[section], "LOC");
   }
   else if (entry[3] == STBIND_GLOBAL){
-    newIndex = symtab.size();
+    newIndex = (symtab.foundEntryByName(name) ? symtab.getIndexOfEntry(name) : symtab.size());
     int oldIndex = (symtab.foundEntryByName(name) ? symtab.getIndexOfEntry(name) : entry[0]);
-    fixRelocation(newIndex, oldIndex, "GLOB");
     if (symtab.foundEntryByName(name)) {
-      int symbolIndex = symtab.getIndexOfEntry(name);
+      symtab[symbolIndex]->indexMap[fileIndex] = entry[0];
+    
       if (ST_BIND(symtab[symbolIndex]->getInfo()) == STBIND_GLOBAL) {
         throw LinkerException("Symbol " + name + " is already defined!");
       }
@@ -185,15 +190,14 @@ void Linker::populateSymbolTable(string line, int fileIndex) {
     }
   }
   else {
-    newIndex = symtab.size();
-    int oldIndex = (symtab.foundEntryByName(name) ? symtab.getIndexOfEntry(name) : entry[0]);
-    fixRelocation(newIndex, oldIndex, "GLOB");
     if (symtab.foundEntryByName(name)) {
+      symtab[symbolIndex]->indexMap[fileIndex] = entry[0];
       return;
     }
+    cout << "prosao" << endl;
   }
   symtab.addSymbol(name, entry[1] + inputSections[childSection], ST_INFO(entry[3], entry[2]), index, 0);
-  symtab[symtab.size() - 1]->file = fileIndex;
+  symtab[symtab.size() - 1]->indexMap[fileIndex] = entry[0];
 }
 
 void Linker::resolveSymbols() {
@@ -314,18 +318,15 @@ void Linker::parseInputFiles() {
     inputFile.close();
     fileIndex++;
   }
-  for (auto entry : relocations) {
-    cout << entry.first << endl;
-    for (auto rela : entry.second) {
-      cout << hex << rela->offset << "\t";
-      if (RELA_TYPE(rela->info) == R_X86_64_32) {
-        cout << "R_X86_64_32";
-      }
-      cout << "\t";
-      cout << hex << RELA_SYM(rela->info) << "\t";
-      cout << hex << rela->addend << " " << rela->type << endl;
+  SymbolTable& symtab = SymbolTable::getInstance();
+  for (int i = 0; i < symtab.size(); i++) {
+    cout << i << "\t" << symtab[i]->getName() << endl;
+    for (auto entry : symtab[i]->indexMap) {
+      cout << entry.first << ": " << entry.second << endl;
     }
+    cout << "\n\n";
   }
+  fixRelocations();
   checkSymbolTable();
   placeSections();
   checkIntersections();

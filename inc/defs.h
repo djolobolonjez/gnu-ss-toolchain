@@ -44,7 +44,15 @@
 #define SHL 0x70
 #define SHR 0x71
 #define ST 0x80
+#define ST_MEM ST
+#define ST_MEMIND 0x82
+#define ST_MEMREG 0x81
 #define LD 0x90
+#define LD_CSR LD
+#define LD_REG 0x91
+#define LD_MEM 0x92
+#define LD_MEM_REG 0x93
+#define LD_CSRW 0x94
 #define CALL 0x21
 #define JMP 0x38
 #define BEQ 0x39

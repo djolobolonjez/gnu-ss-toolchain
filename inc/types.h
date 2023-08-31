@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <map>
 using namespace std;
 
 typedef unsigned long ulong;
@@ -40,6 +41,9 @@ struct SymbolTableEntry {
     bool defined = false;
     bool ext = false;
     int file = 0;
+    int oldIndex;
+    map<int, int> indexMap;
+    map<string, vector<int>> relocationMap;
 
     SymbolTableEntry(long _value, string _name, 
                      byte _info, int _index, 
@@ -67,6 +71,7 @@ struct SymbolTableEntry {
     int addend;
     string type;
     bool fixed;
+    string section;
 
     RelocationTableEntry(ulong _offset, ulong _info, string _type, int _addend = 0) {
       offset = _offset;

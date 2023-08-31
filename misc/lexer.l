@@ -16,7 +16,7 @@ int line_num = 1;
 
 %%
 [ \t\r]+
-"#"[^\n\r]* 
+#[^\n\r]* 
 , { return TOKEN_COMMA; }
 ":" { return TOKEN_COLON; }
 "+" { return TOKEN_PLUS; }
@@ -59,9 +59,13 @@ ld { return TOKEN_LD; }
 st { return TOKEN_ST; }
 csrrd { return TOKEN_CSRRD; }
 csrwr { return TOKEN_CSRWR; }
-(([rR]([0-9]|1[0-5]))|([sS][pP])|([pP][cC])) { yylval.sval = new string(yytext); return TOKEN_GPR; }
-((status)|(handler)|(cause)) { yylval.sval = new string(yytext); return TOKEN_CSR; }
-(([1-9][0-9]*)|(0x[0-9a-fA-F]+)|(0[0-7]+)) { yylval.sval = new string(yytext); return TOKEN_LITERAL; }
+(([rR]([0-9]|1[0-5]))|(sp)|(SP)|(pc)|(PC)) { 
+  if (strcmp(yytext, "sp") == 0 || strcmp(yytext, "SP") == 0) { yylval.sval = new string("r14"); }
+  else if (strcmp(yytext, "pc") == 0 || strcmp(yytext, "PC") == 0)  { yylval.sval = new string("r15"); }
+  else {yylval.sval = new string(yytext);} return TOKEN_GPR; 
+}
+((%status)|(%handler)|(%cause)) { yylval.sval = new string(yytext); return TOKEN_CSR; }
+(([0-9]?[0-9]*)|(0x[0-9a-fA-F]+)|(0[0-7]+)) { yylval.sval = new string(yytext); return TOKEN_LITERAL; cout << "UPARENO " << *(yylval.sval) << endl; }
 \".*\" { yylval.sval = new string(yytext); return TOKEN_STRING; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = new string(yytext); return TOKEN_SYM; }
 \n { ++line_num; return TOKEN_ENDL; }

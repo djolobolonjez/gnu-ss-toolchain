@@ -47,6 +47,9 @@ void _asm_instr_st(InstructionArguments* args) {
   if (args->modificator == 0x1) {
     args->modificator = 0x3;
   }
+  else if (args->modificator == 0x2 && (*(args->args))[0].type == 2) {
+    args->modificator = 0x0;
+  }
   Assembler::getInstance().instructions().st(args, { });
 }
 
@@ -76,4 +79,8 @@ void _asm_instr_jmp(InstructionArguments* args) {
 
 void _asm_instr_csrrd(InstructionArguments* args) {
   Assembler::getInstance().instructions().csrrd(args);
+}
+
+void _asm_instr_csrwr(InstructionArguments* args) {
+  Assembler::getInstance().instructions().csrwr(args);
 }

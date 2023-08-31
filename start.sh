@@ -1,9 +1,15 @@
 ASSEMBLER=assembler
 LINKER=linker
+EMULATOR=emulator
 
-${ASSEMBLER} -o test.o test.s
-${ASSEMBLER} -o test2.o test2.s
+${ASSEMBLER} -o main.o main.s
+${ASSEMBLER} -o math.o math.s
+${ASSEMBLER} -o handler.o handler.s
+${ASSEMBLER} -o isr_timer.o isr_timer.s
+${ASSEMBLER} -o isr_terminal.o isr_terminal.s
+${ASSEMBLER} -o isr_software.o isr_software.s
 ${LINKER} -hex \
-  -place=my_section@0x40000000 -place=other_section@0xF0000000 \
+  -place=my_code@0x40000000 -place=math@0xF0000000 \
   -o program.hex \
-  test.o test2.o
+  handler.o math.o main.o isr_terminal.o isr_timer.o isr_software.o
+${EMULATOR} program.hex

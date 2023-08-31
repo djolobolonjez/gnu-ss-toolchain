@@ -19,8 +19,15 @@ public:
   int getSymbolID() { return ++symbolID; }
 
   int size() const { return symtab.size(); }
-  bool foundEntryByName(string name) const { return entryIndexMap.find(name) != entryIndexMap.end(); } 
-  int getIndexOfEntry(string name) { return entryIndexMap[name]; }
+  bool foundEntryByName(string name) const { 
+    cout << name << endl; 
+    return entryIndexMap.find(name) != entryIndexMap.end(); } 
+  int getIndexOfEntry(string name) { 
+    if (entryIndexMap.find(name) == entryIndexMap.end()) {
+      return -1; 
+    } 
+    return entryIndexMap[name];
+  }
 
   void addSymbol(string name, long value, byte info, int index, ulong size);
 

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <bitset>
 
 using namespace std;
 
@@ -24,9 +25,13 @@ Emulator& Emulator::getInstance() {
 void Emulator::printProcessorState() {
   cout << "----------------------------------------" << endl;
   cout << "Emulated processor executed halt instruction" << endl;
+  cout << "Emulated processor state:" << endl;
   for (int i = 0; i < 16; i++) {
-    cout << "r" << to_string(i) << ": ";
-    cout << hex << setw(8) << setfill('0') << registers.gpr[i] << endl;
+    cout << "r" << to_string(i) << ": " << "0x";
+    cout << hex << setw(8) << setfill('0') << registers.gpr[i] << "\t";
+    if ((i + 1) % 4 == 0) {
+      cout << endl;
+    }
   }
 }
 
@@ -58,12 +63,12 @@ unsigned int Emulator::fromLittleEndian(unsigned int num) {
 int main(int argc, char** argv) {
   Emulator& emulator = Emulator::getInstance();
 
-  if (argc != 2) {
+  /*if (argc != 2) {
     cerr << "You must provide memory content!" << endl;
     return -1;
-  }
+  }*/
 
-  const char* inputFile = argv[1];
+  const char* inputFile = "program.hex";
 
   ifstream input(inputFile);
 
@@ -100,7 +105,6 @@ int main(int argc, char** argv) {
   int nextInstruction;
 
   while (running) {
-    cout << "PC: " << hex << setw(8) << setfill('0') << registers.gpr[pc] << endl;
     nextInstruction = memory[registers.gpr[pc]];
     registers.gpr[pc] += 4;
 
@@ -110,7 +114,7 @@ int main(int argc, char** argv) {
     int byteFour = nextInstruction & 0xff;  
 
     int regA = (byteTwo >> 4) & 0xf, regB = byteTwo & 0xf, regC = (byteThree >> 4) & 0xf;
-    int displacement = byteFour | ((byteTwo & 0xf) << 8);
+    int displacement = byteFour | (((byteThree & 0xf) << 28) >> 20);
 
     switch (opcode) {
       case HALT: {
@@ -147,7 +151,7 @@ int main(int argc, char** argv) {
         if (regA == 0) {
           break;
         }
-        registers.gpr[regA] = registers.gpr[regB] - registers.gpr[regC];
+        registers.gpr[regA] = registers.gpr[regC] - registers.gpr[regB];
         break;
       }
       case MUL: {
@@ -161,7 +165,7 @@ int main(int argc, char** argv) {
         if (regA == 0) {
           break;
         }
-        registers.gpr[regA] = registers.gpr[regB] / registers.gpr[regC];
+        registers.gpr[regA] = registers.gpr[regC] / registers.gpr[regB];
         break;
       }
       case NOT: {
@@ -237,6 +241,43 @@ int main(int argc, char** argv) {
         if (registers.gpr[regB] > registers.gpr[regC]) {
           registers.gpr[pc] = Emulator::fromLittleEndian(memory[address]);
         }
+        break;
+      }
+      case LD_CSR: {
+        registers.gpr[regA] = registers.csr[regB];
+        break;
+      }
+      case LD_CSRW: {
+        registers.csr[regA] = registers.gpr[regB];
+        break;
+      }
+      case LD_REG: {
+        registers.gpr[regA] = registers.gpr[regB] + displacement;
+        break;
+      }
+      case LD_MEM: {
+        long address = registers.gpr[regB] + registers.gpr[regC] + displacement;
+        registers.gpr[regA] = Emulator::fromLittleEndian(memory[address]);
+
+        break;
+      }
+      case LD_MEM_REG: {
+        registers.gpr[regA] = Emulator::fromLittleEndian(memory[registers.gpr[regB]]);
+        registers.gpr[regB] += displacement;
+        break;
+      }
+      case ST_MEMREG: {
+        registers.gpr[regA] += displacement;
+        memory[registers.gpr[regA]] = Emulator::toLittleEndian(registers.gpr[regC]);
+      }
+      case ST_MEM: {
+        long address = registers.gpr[regA] + registers.gpr[regB] + displacement;
+        memory[address] = Emulator::toLittleEndian(registers.gpr[regC]);
+        break;
+      }
+      case ST_MEMIND: {
+        long address = registers.gpr[regA] + registers.gpr[regB] + displacement;
+        memory[Emulator::fromLittleEndian(memory[address])] = Emulator::toLittleEndian(registers.gpr[regC]); 
         break;
       }
     }

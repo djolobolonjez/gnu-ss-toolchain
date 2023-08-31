@@ -54,7 +54,9 @@ void AssemblyDirectives::wordSymbol(string symbol) {
 }
 
 void AssemblyDirectives::wordLiteral(string value) {
+  cout << "VREDNOST: " << value << endl;
   int data = stoi(value, nullptr, Utils::findBase(value));
+  cout << "PROSAO" << endl;
   Utils::addWord(SectionTable::getInstance().getCurrentSection(), data, false);
 }
 
