@@ -54,9 +54,7 @@ void AssemblyDirectives::wordSymbol(string symbol) {
 }
 
 void AssemblyDirectives::wordLiteral(string value) {
-  cout << "VREDNOST: " << value << endl;
   int data = stoi(value, nullptr, Utils::findBase(value));
-  cout << "PROSAO" << endl;
   Utils::addWord(SectionTable::getInstance().getCurrentSection(), data, false);
 }
 
@@ -220,13 +218,13 @@ void AssemblyDirectives::end() {
 
     output.close();
 
-    for (int i = 0; i < sectiontab.size(); i++) {
-      sectiontab[i]->printSection();
-      sectiontab[i]->printRelaTable();
+    // for (int i = 0; i < sectiontab.size(); i++) {
+    //   sectiontab[i]->printSection();
+    //   sectiontab[i]->printRelaTable();
 
       
-    }
-    cout << "End of assembly file" << endl;
+    // }
+    // cout << "End of assembly file" << endl;
   }
 
   

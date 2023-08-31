@@ -68,8 +68,4 @@ void _asm_dir_end(bool secondPass) {
   if (!secondPass) {
     Assembler::getInstance().sectionReset();
   }
-  else {
-    cout << "OK" << endl;
-  }
-  //Assembler::getInstance().printSymbolTable();
 }

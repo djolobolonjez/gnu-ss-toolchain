@@ -190,7 +190,7 @@ instructions:
     }
   
   | TOKEN_HALT { if (secondPass) { _asm_instr_halt(); } instructionFirstPass(); }
-  | TOKEN_INT { if (secondPass) { _asm_instr_int(); cout << "OK INT" << endl; }  instructionFirstPass(); }
+  | TOKEN_INT { if (secondPass) { _asm_instr_int(); }  instructionFirstPass(); }
   | TOKEN_IRET { if (secondPass) { _asm_instr_iret(); } instructionFirstPass(); instructionFirstPass(); }
   | TOKEN_RET { 
       if (secondPass) { 
@@ -207,13 +207,10 @@ instructions:
   | TOKEN_ST register TOKEN_COMMA operand { if (secondPass) { $4->args->push_back({$2, 2}); _asm_instr_st($4); } 
       if(!secondPass && ($4->modificator == 0x8 || $4->modificator == 0x9)) { instructionFirstPass($4); }
       else { instructionFirstPass($4); }
-
-      cout << "OVO PROLAZI" << endl;
     }
   | TOKEN_LD operand TOKEN_COMMA register { if (secondPass) { $2->args->push_back({$4, 2}); _asm_instr_ld($2); } 
       if (!secondPass && ($2->modificator == 0x8 || $2->modificator == 0x9)) { for (int i = 0; i < 2; i++) { instructionFirstPass($2); } }
       else { instructionFirstPass($2); }
-      cout << "PROSAO OVDE" << endl;
     }
   | TOKEN_PUSH operand { if (secondPass) { $2->modificator=0x1; _asm_instr_push($2); } instructionFirstPass(); }
   | TOKEN_POP operand { if (secondPass) { $2->modificator = 0x3; _asm_instr_pop($2); } instructionFirstPass(); }

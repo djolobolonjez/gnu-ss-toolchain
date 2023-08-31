@@ -218,7 +218,6 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
       break;
     }
     case 0x8: {
-      cout << "TO JE TAJ" << endl;
       ss.str("");
       ss.clear();
       mod = 0x2;
@@ -228,7 +227,7 @@ void AssemblyInstructions::st(InstructionArguments* instruction, opcode code) {
       code.third = stoi(arguments[1].value->substr(1));
       code.first = 0xf;
       code.second = 0;
-      cout << "I OVAJ JE DOBAR" << endl;
+      
       map<string, int>& literalPool = currentSection->getPool();
       code.displacement = literalPool[*(arguments[0].value)] - currentSection->getLocationCounter() - 4;
       if (code.displacement > MAX_DISPLACEMENT) {

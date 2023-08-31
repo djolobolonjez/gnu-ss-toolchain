@@ -37,9 +37,7 @@ int main(int argc, char** argv) {
         string sectionPlace = argument.substr(7);
         int separator = sectionPlace.find("@");
         string section = sectionPlace.substr(0, separator);
-        cout << "OK" << endl;
         long location = stol(sectionPlace.substr(separator + 1), nullptr, 16);
-        cout << "OK1" << endl;
         sectionsPlace[section] = location;
       }
       else {
@@ -54,14 +52,6 @@ int main(int argc, char** argv) {
     cerr << "Missing -hex option!" << endl;
     return -1;
   }
-
-  // inputFiles.push_back("handler.o");
-  // inputFiles.push_back("math.o");
-  // inputFiles.push_back("main.o");
-  // inputFiles.push_back("isr_terminal.o");
-  // inputFiles.push_back("isr_timer.o");
-  // inputFiles.push_back("isr_software.o");
-  cout << "OK" << endl;
 
   Linker& linker = Linker::getInstance();
 

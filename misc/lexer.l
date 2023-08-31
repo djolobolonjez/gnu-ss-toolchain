@@ -65,7 +65,7 @@ csrwr { return TOKEN_CSRWR; }
   else {yylval.sval = new string(yytext);} return TOKEN_GPR; 
 }
 ((%status)|(%handler)|(%cause)) { yylval.sval = new string(yytext); return TOKEN_CSR; }
-(([0-9]?[0-9]*)|(0x[0-9a-fA-F]+)|(0[0-7]+)) { yylval.sval = new string(yytext); return TOKEN_LITERAL; cout << "UPARENO " << *(yylval.sval) << endl; }
+(([0-9]?[0-9]*)|(0x[0-9a-fA-F]+)|(0[0-7]+)) { yylval.sval = new string(yytext); return TOKEN_LITERAL; }
 \".*\" { yylval.sval = new string(yytext); return TOKEN_STRING; }
 [a-zA-Z_][a-zA-Z0-9_]* { yylval.sval = new string(yytext); return TOKEN_SYM; }
 \n { ++line_num; return TOKEN_ENDL; }

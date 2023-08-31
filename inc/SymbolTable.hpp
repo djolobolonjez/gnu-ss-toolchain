@@ -20,7 +20,6 @@ public:
 
   int size() const { return symtab.size(); }
   bool foundEntryByName(string name) const { 
-    cout << name << endl; 
     return entryIndexMap.find(name) != entryIndexMap.end(); } 
   int getIndexOfEntry(string name) { 
     if (entryIndexMap.find(name) == entryIndexMap.end()) {

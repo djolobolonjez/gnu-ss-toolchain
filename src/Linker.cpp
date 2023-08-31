@@ -28,6 +28,15 @@ void Linker::updateSectionHeaders(string name, int size, int fileIndex, int inde
 }
 
 void Linker::placeSections() {
+  long maximum = 0;
+  string section;
+  for (auto place : sectionsPlace) {
+    if (place.second > maximum) {
+      maximum = place.second;
+      section = place.first;
+    }
+  }
+  locationCounter = sectionsPlace[section] + outputSections[section];
   for (auto entry : outputSections) {
     inputSections[entry.first] = outputSections[entry.first];
     if (sectionsPlace.find(entry.first) != sectionsPlace.end()) {
@@ -114,7 +123,6 @@ void Linker::fixRelocations() {
   for (auto relaEntry: relocations) {
     for (auto rela: relaEntry.second) {
       int fileIndex = stoi(relaEntry.first.substr(relaEntry.first.length() - 1));
-      cout << "INDEX: " << fileIndex << endl;
       for (int i = 1; i < symtab.size(); i++) {
         SymbolTable& symtab = SymbolTable::getInstance();
         if (!rela->fixed && symtab[i]->indexMap[fileIndex] == RELA_SYM(rela->info) && rela->type == "GLOB") {
@@ -123,18 +131,6 @@ void Linker::fixRelocations() {
         }
          
       }
-    }
-  }
-  for (auto entry : relocations) {
-    cout << entry.first << endl;
-    for (auto rela : entry.second) {
-      cout << hex << rela->offset << "\t";
-      if (RELA_TYPE(rela->info) == R_X86_64_32) {
-        cout << "R_X86_64_32";
-      }
-      cout << "\t";
-      cout << hex << RELA_SYM(rela->info) << "\t";
-      cout << hex << rela->addend << " " << rela->type << endl;
     }
   }
 }
@@ -194,7 +190,6 @@ void Linker::populateSymbolTable(string line, int fileIndex) {
       symtab[symbolIndex]->indexMap[fileIndex] = entry[0];
       return;
     }
-    cout << "prosao" << endl;
   }
   symtab.addSymbol(name, entry[1] + inputSections[childSection], ST_INFO(entry[3], entry[2]), index, 0);
   symtab[symtab.size() - 1]->indexMap[fileIndex] = entry[0];
@@ -211,8 +206,6 @@ void Linker::resolveSymbols() {
       symtab[i]->setValue(value + offset);
     }
   }
-
-  Assembler::getInstance().printSymbolTable();
 }
 
 void Linker::resolveRelocations() {
@@ -319,13 +312,7 @@ void Linker::parseInputFiles() {
     fileIndex++;
   }
   SymbolTable& symtab = SymbolTable::getInstance();
-  for (int i = 0; i < symtab.size(); i++) {
-    cout << i << "\t" << symtab[i]->getName() << endl;
-    for (auto entry : symtab[i]->indexMap) {
-      cout << entry.first << ": " << entry.second << endl;
-    }
-    cout << "\n\n";
-  }
+  
   fixRelocations();
   checkSymbolTable();
   placeSections();
@@ -360,8 +347,4 @@ void Linker::parseInputFiles() {
     } 
   }
   outputFile.close();
-  
-  // for (auto entry : outputSections) {
-  //   cout << entry.first << ": " << entry.second << endl;
-  // }
 }
